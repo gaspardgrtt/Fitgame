@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Fonte">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
@@ -453,11 +453,7 @@ body{background:var(--bg)}
 @keyframes goo{0%{scale:1 1}40%{scale:1.1 .92}100%{scale:1 1}}
 .chips,.wk-tabs{margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px),calc(50% - 264px)));padding-inline:max(16px,env(safe-area-inset-left,0px),calc(50% - 264px))}
 
-/* iOS home-screen app: the viewport can come out shorter than the screen (gap at the bottom). --vh-gap fills it. */
 html{background:var(--bg)}
-#app{bottom:auto;height:calc(100% + var(--vh-gap,0px))}
-.nav,.rest-bar,.bottom-bar,.toast{translate:0 var(--vh-gap,0px)}
-.overlay{bottom:calc(-1 * var(--vh-gap,0px))}
 </style>
 
 <div class="liquid-bg" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -825,17 +821,6 @@ function applyTheme() {
   const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = dark ? '#0E0F11' : '#ECEEF1';
 }
 if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { if (S.settings.theme === 'auto') applyTheme(); });
-function fitViewport() {
-  let gap = 0;
-  if (navigator.standalone === true) { // iOS home-screen app only
-    const full = innerWidth > innerHeight ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
-    gap = Math.max(0, Math.round(full - innerHeight));
-    if (gap > 140) gap = 0; // safety: never push the bars off screen
-  }
-  document.documentElement.style.setProperty('--vh-gap', gap + 'px');
-}
-fitViewport();
-addEventListener('resize', fitViewport); addEventListener('orientationchange', () => setTimeout(fitViewport, 300));
 function appScroll(y) { const a = document.getElementById('app'); if (a) a.scrollTop = y || 0; }
 function appY() { const a = document.getElementById('app'); return a ? a.scrollTop : 0; }
 // Hide the floating bar while the keyboard is open (it would otherwise ride up above it)
