@@ -1,0 +1,9 @@
+Carnet de Fonte – version site web (Vercel)
+
+Fichiers à mettre à la racine du projet Vercel :
+index.html, manifest.webmanifest, sw.js, vercel.json, icon-*.png
+
+Réglages Vercel : Framework Preset = "Other", pas de commande de build, dossier de sortie = racine.
+
+Les données sont enregistrées dans le navigateur du téléphone (pas de compte, pas de serveur).
+Pense à exporter une sauvegarde de temps en temps (Profil > Exporter une sauvegarde complète).
