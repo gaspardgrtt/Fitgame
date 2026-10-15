@@ -45,7 +45,7 @@
   --nav-h:64px;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:0;padding:0}
@@ -440,6 +440,18 @@ body{background:var(--bg)}
 .ms-key{display:inline-block;width:14px;height:8px;border-radius:3px;margin-right:6px;vertical-align:0}
 .ms-key.zone{background:var(--up-soft);border:1px dashed var(--up)}
 .ms-key.avg{width:2px;height:12px;background:var(--fg);opacity:.55;vertical-align:-2px}
+
+/* ───── Stable mobile shell: the page never scrolls, only #app does ───── */
+:root{padding-top:0!important;padding-bottom:0!important}
+#app{position:fixed;inset:0;max-width:none;margin:0;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
+  padding-top:max(12px,env(safe-area-inset-top,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px),calc(50% - 264px));
+  padding-right:max(16px,env(safe-area-inset-right,0px),calc(50% - 264px))}
+.nav{transform:translateZ(0);will-change:transform;transition:transform .35s var(--spring),opacity .25s}
+.kb .nav{transform:translateY(140%);opacity:0;pointer-events:none}
+.nav-blob.moving{animation:goo .5s ease-out}
+@keyframes goo{0%{scale:1 1}40%{scale:1.1 .92}100%{scale:1 1}}
+.chips,.wk-tabs{margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px),calc(50% - 264px)));padding-inline:max(16px,env(safe-area-inset-left,0px),calc(50% - 264px))}
 </style>
 
 <div class="liquid-bg" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -793,9 +805,9 @@ let tab = 'home';
 let stack = []; // [{v:'editor', id}, ...]
 let ui = { libQ: '', libMuscle: null, libEquip: null, pick: null, histQ: '', progQ: '', metric: 'e1', period: '3m', wkIdx: 0 };
 const top = () => stack[stack.length - 1] || null;
-function go(v) { stack.push(v); render(); scrollTo(0, 0); }
+function go(v) { stack.push(v); render(); appScroll(0); }
 function back() { stack.pop(); render(); }
-function setTab(t) { tab = t; stack = []; render(); scrollTo(0, 0); }
+function setTab(t) { tab = t; stack = []; render(); appScroll(0); }
 
 /* ───────────── Render root ───────────── */
 const darkMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
@@ -807,6 +819,11 @@ function applyTheme() {
   const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = dark ? '#0E0F11' : '#ECEEF1';
 }
 if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { if (S.settings.theme === 'auto') applyTheme(); });
+function appScroll(y) { const a = document.getElementById('app'); if (a) a.scrollTop = y || 0; }
+function appY() { const a = document.getElementById('app'); return a ? a.scrollTop : 0; }
+// Hide the floating bar while the keyboard is open (it would otherwise ride up above it)
+document.addEventListener('focusin', e => { const t = e.target; if (t && t.matches && t.matches('input:not([type=checkbox]):not([type=file]),textarea,select')) document.body.classList.add('kb'); });
+document.addEventListener('focusout', () => setTimeout(() => { const t = document.activeElement; if (!(t && t.matches && t.matches('input,textarea,select'))) document.body.classList.remove('kb'); }, 60));
 function render() {
   applyTheme();
   const t = top();
@@ -1059,7 +1076,7 @@ function startSession(tplId) {
   Store.touchActive(true);
   closeModal();
   stack = [{ v: 'workout' }];
-  render(); scrollTo(0, 0);
+  render(); appScroll(0);
   wakeLock();
   if (!tpl) openPicker('session');
 }
@@ -1169,7 +1186,7 @@ function finishSession(journal) {
   if (wl) { try { wl.release(); } catch (e) {} wl = null; }
   closeModal();
   stack = [{ v: 'summary', id: w.id }];
-  render(); scrollTo(0, 0);
+  render(); appScroll(0);
 }
 function comparable(w) {
   return sortedWorkouts().find(o => o.id !== w.id && o.endedAt < w.endedAt && (w.templateId ? o.templateId === w.templateId : o.name === w.name));
@@ -1554,8 +1571,8 @@ const A = {
       const nx = buildSessionExercise(d.id, { sets: rp.left, reps: old.reps, rest: old.rest, notes: '' });
       if (rp.doneCount) { old.sets = old.sets.filter(z => z.done); a.exercises.splice(i + 1, 0, nx); a.cur = i + 1; }
       else { a.exercises[i] = nx; a.cur = i; }
-      Store.touchActive(true); render(); scrollTo(0, 0); toast(`Remplacé par ${nx.name}`); return;
-    } const s = ui.pick.sel, i = s.indexOf(d.id); i >= 0 ? s.splice(i, 1) : s.push(d.id); const y = scrollY; render(); scrollTo(0, y); },
+      Store.touchActive(true); render(); appScroll(0); toast(`Remplacé par ${nx.name}`); return;
+    } const s = ui.pick.sel, i = s.indexOf(d.id); i >= 0 ? s.splice(i, 1) : s.push(d.id); const y = appY(); render(); appScroll(y); },
   'pick-cancel': () => { ui.pick = null; back(); },
   'pick-done': () => {
     const p = ui.pick; ui.pick = null; stack.pop();
@@ -1584,8 +1601,8 @@ const A = {
       { label: 'Supprimer de l’historique', icon: I.trash, danger: true, run: () => confirmBox({ title: 'Supprimer cet entraînement ?', text: 'Il sera retiré de ton historique et de tes statistiques. Cette action est définitive.', ok: 'Supprimer', danger: true, onOk: () => { S.workouts = S.workouts.filter(x => x.id !== w.id); Store.deleteWorkout(w.id); closeModal(); stack.pop(); render(); toast('Entraînement supprimé'); } }) }
     ]);
   },
-  metric: d => { ui.metric = d.k; const y = scrollY; render(); scrollTo(0, y); },
-  period: d => { ui.period = d.k; const y = scrollY; render(); scrollTo(0, y); },
+  metric: d => { ui.metric = d.k; const y = appY(); render(); appScroll(y); },
+  period: d => { ui.period = d.k; const y = appY(); render(); appScroll(y); },
   'start-pick': () => {
     if (S.active) return A.resume();
     if (!S.templates.length) { startSession(null); return; }
@@ -1594,25 +1611,25 @@ const A = {
   },
   start: d => startSession(d.id),
   'start-free': () => startSession(null),
-  'split-nav': d => { const w0 = startOfWeek(Date.now()); let a = ui.splitWeek || w0; if (+d.d < 0) a = prevWeek(a); else { const x = new Date(a); x.setDate(x.getDate() + 7); a = Math.min(w0, startOfWeek(x.getTime() + DAY / 2)); } ui.splitWeek = a; const y = scrollY; render(); scrollTo(0, y); },
-  theme: d => { S.settings.theme = d.k; Store.touchLib(); const y = scrollY; render(); scrollTo(0, y); },
-  'goal-step': d => { const g = Math.max(1, Math.min(21, (S.settings.weekGoal || 3) + +d.d)); S.settings.weekGoal = g; Store.touchLib(); const v = $('#goal-val'); if (v) { v.value = g; } else { const y = scrollY; render(); scrollTo(0, y); } },
+  'split-nav': d => { const w0 = startOfWeek(Date.now()); let a = ui.splitWeek || w0; if (+d.d < 0) a = prevWeek(a); else { const x = new Date(a); x.setDate(x.getDate() + 7); a = Math.min(w0, startOfWeek(x.getTime() + DAY / 2)); } ui.splitWeek = a; const y = appY(); render(); appScroll(y); },
+  theme: d => { S.settings.theme = d.k; Store.touchLib(); const y = appY(); render(); appScroll(y); },
+  'goal-step': d => { const g = Math.max(1, Math.min(21, (S.settings.weekGoal || 3) + +d.d)); S.settings.weekGoal = g; Store.touchLib(); const v = $('#goal-val'); if (v) { v.value = g; } else { const y = appY(); render(); appScroll(y); } },
   'goal-edit': () => modal(`<h2>Objectif par semaine</h2><p class="small muted" style="margin-top:6px">Combien de séances veux-tu faire chaque semaine ?</p>
     <div class="row" style="margin-top:16px;justify-content:center;gap:14px"><button class="icon-btn" style="width:54px;height:54px;font-size:26px" data-a="goal-step" data-d="-1" aria-label="Moins">−</button><input class="input num display" id="goal-val" inputmode="numeric" value="${S.settings.weekGoal || 3}" style="width:96px;height:64px;text-align:center;font-size:40px" aria-label="Séances par semaine"><button class="icon-btn" style="width:54px;height:54px;font-size:26px" data-a="goal-step" data-d="1" aria-label="Plus">+</button></div>
     <button class="btn primary block" style="margin-top:18px" data-a="goal-save">Enregistrer</button>`),
   'goal-save': () => { const g = Math.round(num($('#goal-val').value) || 0); if (g < 1 || g > 21) return toast('Choisis entre 1 et 21 séances'); S.settings.weekGoal = g; Store.touchLib(); closeModal(); render(); toast(`Objectif : ${plural(g, 'séance')} par semaine`); },
-  'set-rir': d => { const x = curEx(), s = x.sets[+d.i], v = +d.v; s.rir = s.rir === v ? undefined : v; if (s.rir === undefined) delete s.rir; Store.touchActive(); const y = scrollY; render(); scrollTo(0, y); },
-  'apply-sug': () => { const x = curEx(), sg = suggestion(x); if (!sg) return; x.sets.forEach(s => { if (!s.done) { s.w = String(sg.w); s.r = String(sg.r); } }); x.sugDone = true; Store.touchActive(true); const y = scrollY; render(); scrollTo(0, y); toast('Charges mises à jour : ' + fmtKg(sg.w)); },
+  'set-rir': d => { const x = curEx(), s = x.sets[+d.i], v = +d.v; s.rir = s.rir === v ? undefined : v; if (s.rir === undefined) delete s.rir; Store.touchActive(); const y = appY(); render(); appScroll(y); },
+  'apply-sug': () => { const x = curEx(), sg = suggestion(x); if (!sg) return; x.sets.forEach(s => { if (!s.done) { s.w = String(sg.w); s.r = String(sg.r); } }); x.sugDone = true; Store.touchActive(true); const y = appY(); render(); appScroll(y); toast('Charges mises à jour : ' + fmtKg(sg.w)); },
   'j-forme': (d, el) => { ui.forme = ui.forme === +d.v ? 0 : +d.v; document.querySelectorAll('[data-a="j-forme"]').forEach(b => { const on = +b.dataset.v === ui.forme; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); },
   'finish-ok': () => { const j = { forme: ui.forme || 0, sleep: ($('#j-sleep') || {}).value || '', notes: (($('#j-notes') || {}).value || '').trim() }; finishSession(j); },
-  'rep-nav': d => { const now = new Date(); const m = new Date(ui.repMonth || new Date(now.getFullYear(), now.getMonth(), 1).getTime()); m.setMonth(m.getMonth() + +d.d); ui.repMonth = m.getTime(); const y = scrollY; render(); scrollTo(0, y); },
-  'cal-nav': d => { const m = new Date(ui.calMonth || Date.now()); m.setDate(1); m.setHours(0, 0, 0, 0); m.setMonth(m.getMonth() + +d.d); ui.calMonth = m.getTime(); const y = scrollY; render(); scrollTo(0, y); },
+  'rep-nav': d => { const now = new Date(); const m = new Date(ui.repMonth || new Date(now.getFullYear(), now.getMonth(), 1).getTime()); m.setMonth(m.getMonth() + +d.d); ui.repMonth = m.getTime(); const y = appY(); render(); appScroll(y); },
+  'cal-nav': d => { const m = new Date(ui.calMonth || Date.now()); m.setDate(1); m.setHours(0, 0, 0, 0); m.setMonth(m.getMonth() + +d.d); ui.calMonth = m.getTime(); const y = appY(); render(); appScroll(y); },
   'cal-day': d => { const ws = S.workouts.filter(w => startOfDay(w.endedAt) === +d.t).sort((a, b) => a.endedAt - b.endedAt); if (ws.length === 1) return go({ v: 'wdetail', id: ws[0].id }); menu(cap(fmtDateLong(+d.t)), ws.map(w => ({ label: esc(w.name) + ' · ' + fmtDur(w.duration), icon: I.dumbbell, run: () => { closeModal(); go({ v: 'wdetail', id: w.id }); } }))); },
   'edit-from-pick': d => { closeModal(); go({ v: 'editor', id: d.id }); },
-  resume: () => { closeModal(); stack = [{ v: 'workout' }]; render(); scrollTo(0, 0); wakeLock(); },
+  resume: () => { closeModal(); stack = [{ v: 'workout' }]; render(); appScroll(0); wakeLock(); },
   'discard-then': () => { const f = pendingThen; S.active = null; Store.touchActive(true); closeModal(); if (f) f(); },
   'wk-min': () => { stack = []; tab = 'home'; render(); },
-  'wk-go': d => { const i = +d.i; if (i < 0 || i >= S.active.exercises.length) return; S.active.cur = i; Store.touchActive(); render(); scrollTo(0, 0); },
+  'wk-go': d => { const i = +d.i; if (i < 0 || i >= S.active.exercises.length) return; S.active.cur = i; Store.touchActive(); render(); appScroll(0); },
   'wk-add-ex': () => openPicker('session'),
   'wk-menu': () => menu(S.active.name, [
     { label: 'Ajouter un exercice', icon: I.plus, run: () => { closeModal(); openPicker('session'); } },
@@ -1651,12 +1668,12 @@ const A = {
       for (let j = i + 1; j < x.sets.length; j++) if (!x.sets[j].done && x.sets[j].w === '') x.sets[j].w = s.w;
       Store.touchActive(true);
       if (S.settings.autoRest && x.rest) startRest(x.rest);
-      justDone = i; lastViewKey = 'workout:'; const y = scrollY; render(); scrollTo(0, y);
+      justDone = i; lastViewKey = 'workout:'; const y = appY(); render(); appScroll(y);
       if (x.sets.every(z => z.done) && S.active.cur < S.active.exercises.length - 1) toast('Exercice terminé · passe au suivant');
-    } else { s.done = false; Store.touchActive(true); const y = scrollY; render(); scrollTo(0, y); }
+    } else { s.done = false; Store.touchActive(true); const y = appY(); render(); appScroll(y); }
   },
-  'set-add': () => { const x = curEx(), l = x.sets[x.sets.length - 1]; x.sets.push({ w: l ? l.w : '', r: l ? l.r : '', done: false }); Store.touchActive(true); const y = scrollY; render(); scrollTo(0, y); },
-  'set-del': () => { const x = curEx(); if (x.sets.length > 1) { x.sets.pop(); Store.touchActive(true); const y = scrollY; render(); scrollTo(0, y); } },
+  'set-add': () => { const x = curEx(), l = x.sets[x.sets.length - 1]; x.sets.push({ w: l ? l.w : '', r: l ? l.r : '', done: false }); Store.touchActive(true); const y = appY(); render(); appScroll(y); },
+  'set-del': () => { const x = curEx(); if (x.sets.length > 1) { x.sets.pop(); Store.touchActive(true); const y = appY(); render(); appScroll(y); } },
   'rest-start': () => { const x = curEx(); startRest(x ? x.rest || S.settings.rest : S.settings.rest); },
   'rest-add': d => { const r = S.active.rest; if (!r) return; r.endAt += +d.d * 1000; r.total = Math.max(5, r.total + +d.d); if (r.endAt < Date.now()) { S.active.rest = null; renderFloat(); } Store.touchActive(); tick(); },
   'rest-stop': () => { S.active.rest = null; Store.touchActive(); renderFloat(); },
@@ -1672,7 +1689,7 @@ const A = {
     <div class="field"><label for="j-notes">Douleurs, sensations, notes</label><textarea class="input" id="j-notes" placeholder="Ex. : épaule droite sensible au développé, bonne énergie…" maxlength="600"></textarea></div></div>
     <div class="row" style="margin-top:18px"><button class="btn grow" data-a="close">Continuer</button><button class="btn primary grow" data-a="finish-ok">Terminer et enregistrer</button></div>`);
   },
-  'summary-done': () => { stack = []; tab = 'home'; render(); scrollTo(0, 0); },
+  'summary-done': () => { stack = []; tab = 'home'; render(); appScroll(0); },
   toggle: d => { S.settings[d.k] = !S.settings[d.k]; Store.touchLib(); render(); },
   'export-json': () => { const d = new Date(); offerFile(`carnet-de-fonte-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`, JSON.stringify(backupObject(), null, 1)); },
   'export-csv': () => { if (!S.workouts.length) return toast('Aucune séance à exporter'); const d = new Date(); offerFile(`carnet-de-fonte-series-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.csv`, toCsv()); },
@@ -1695,7 +1712,7 @@ const A = {
 function startFromWorkout(w) {
   if (S.active) { askActive(() => startFromWorkout(w)); return; }
   S.active = { id: uid(), templateId: null, name: w.name, notes: '', startedAt: Date.now(), cur: 0, rest: null, exercises: w.exercises.filter(x => exById(x.exId)).map(x => buildSessionExercise(x.exId, { sets: x.sets.length, reps: '', rest: S.settings.rest })) };
-  Store.touchActive(true); stack = [{ v: 'workout' }]; render(); scrollTo(0, 0); wakeLock();
+  Store.touchActive(true); stack = [{ v: 'workout' }]; render(); appScroll(0); wakeLock();
 }
 
 document.addEventListener('click', ev => {
@@ -1739,7 +1756,7 @@ document.addEventListener('input', ev => {
       const q = slug(ui.libQ); const list = allExercises().filter(e => (!ui.libMuscle || e.muscle === ui.libMuscle) && (!ui.libEquip || e.equip === ui.libEquip) && (!q || slug(e.name).includes(q))).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
       $('#lib-list').innerHTML = libList(list); }, 120); break;
     case 'hist-q': ui.histQ = v; clearTimeout(bindT.h); bindT.h = setTimeout(() => { const q = slug(v); $('#hist-list').innerHTML = histList(sortedWorkouts().filter(w => !q || slug(w.name).includes(q) || w.exercises.some(x => slug(exName(x.exId, x.name)).includes(q)))); }, 120); break;
-    case 'prog-q': ui.progQ = v; clearTimeout(bindT.p); bindT.p = setTimeout(() => { const y = scrollY; const el2 = document.activeElement; render(); const i = $('#prog-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } scrollTo(0, y); }, 200); break;
+    case 'prog-q': ui.progQ = v; clearTimeout(bindT.p); bindT.p = setTimeout(() => { const y = appY(); const el2 = document.activeElement; render(); const i = $('#prog-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } appScroll(y); }, 200); break;
   }
 });
 document.addEventListener('change', ev => {
