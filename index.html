@@ -1058,6 +1058,9 @@ function cmpModal() {
 /* ───────────── Amis (Supabase, sans bibliothèque) ───────────── */
 const SBK = 'fonte-sb';
 const SBd = (() => { try { return JSON.parse(localStorage.getItem(SBK)) || {}; } catch (e) { return {}; } })();
+// Remplis ces deux lignes avec ton URL Supabase et ta clé « publishable » : tes amis n'auront alors rien à configurer.
+const SB_URL = 'https://byjgpkoyvpircjjzysmo.supabase.co', SB_KEY = 'sb_publishable_vRuIiBWxjJWRHj4JTCxsGw_Rmqj6Pn9';
+if (SB_URL && SB_KEY) { SBd.url = SB_URL; SBd.key = SB_KEY; }
 const sbSave = () => { try { localStorage.setItem(SBK, JSON.stringify(SBd)); } catch (e) {} };
 const SBs = { friends: [], stats: [], loading: false, err: '' };
 const sbOn = () => !!(SBd.url && SBd.key);
@@ -1099,12 +1102,16 @@ async function sbBoot() {
   SBs.loading = false; renderFr();
 }
 async function sbAuth(mode) {
-  const email = $('#sb-email').value.trim(), password = $('#sb-pw').value;
-  if (!email || password.length < 6) return toast('Email + mot de passe de 6 caractères minimum');
+  const pseudo = $('#sb-email').value.trim().toLowerCase().replace(/^@/, ''), password = $('#sb-pw').value;
+  if (!/^[a-z0-9_]{3,20}$/.test(pseudo)) return toast('Pseudo : 3 à 20 caractères (lettres, chiffres, _)');
+  if (password.length < 6) return toast('Mot de passe : 6 caractères minimum');
   try {
-    const j = await sbReq(mode === 'up' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password } });
-    if (j && j.access_token) { sbSetSes(j); await sbBoot(); } else toast('Compte créé : confirme ton email, puis connecte-toi');
-  } catch (e) { toast(e.message); }
+    const j = await sbReq(mode === 'up' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method: 'POST', body: { email: pseudo + '@carnet-fonte.app', password } });
+    if (!j || !j.access_token) return toast('Dans Supabase, désactive « Confirm email » (Authentication > Sign In / Providers > Email)');
+    sbSetSes(j);
+    if (mode === 'up') { try { await sbReq('/rest/v1/profiles', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: { id: j.user.id, pseudo } }); } catch (e) {} }
+    await sbBoot();
+  } catch (e) { toast(/already|registered/i.test(e.message) ? 'Ce pseudo est déjà pris' : /invalid login/i.test(e.message) ? 'Pseudo ou mot de passe incorrect' : e.message); }
 }
 const inviteLink = () => location.origin + location.pathname + '#ami=' + SBd.pseudo;
 function friendsCard() {
@@ -1115,7 +1122,7 @@ function viewFriends() {
   const wrap = x => `${bar}<div class="stack-lg" style="margin-top:8px">${x}</div>`;
   const card = x => `<div class="card stack">${x}</div>`;
   if (!sbOn()) return wrap(card(`<h3>Brancher ton espace amis</h3><p class="muted small">Il faut un projet Supabase gratuit. Colle ici l’URL du projet et la clé « publishable » (ou « anon »). Jamais la clé « service_role ».</p><input class="input" id="sb-url" placeholder="https://xxxx.supabase.co" autocapitalize="off" autocomplete="off" inputmode="url"><input class="input" id="sb-key" placeholder="Clé publishable / anon" autocapitalize="off" autocomplete="off"><button class="btn primary block" data-a="fr-save-cfg">Enregistrer</button>`));
-  if (!SBd.ses) return wrap(card(`<h3>Connexion</h3><p class="muted small">Tes séances restent sur ton téléphone. Seul un petit résumé (séances de la semaine, série, total, dernière séance) est partagé avec tes amis acceptés.</p><input class="input" id="sb-email" type="email" placeholder="Email" autocapitalize="off" autocomplete="email"><input class="input" id="sb-pw" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password"><div class="row"><button class="btn primary grow" data-a="fr-in">Se connecter</button><button class="btn grow" data-a="fr-up">Créer un compte</button></div><button class="btn ghost sm" data-a="fr-reset">Changer de projet Supabase</button>`));
+  if (!SBd.ses) return wrap(card(`<h3>Connexion</h3><p class="muted small">Pas d’email : juste un pseudo et un mot de passe (note-le bien, il ne peut pas être récupéré). Tes séances restent sur ton téléphone. Seul un petit résumé (séances de la semaine, série, total, dernière séance) est partagé avec tes amis acceptés.</p><input class="input" id="sb-email" placeholder="Ton pseudo" autocapitalize="off" autocomplete="username" maxlength="20"><input class="input" id="sb-pw" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password"><div class="row"><button class="btn primary grow" data-a="fr-in">Se connecter</button><button class="btn grow" data-a="fr-up">Créer un compte</button></div><button class="btn ghost sm" data-a="fr-reset">Changer de projet Supabase</button>`));
   if (SBs.loading && !SBd.pseudo) return wrap('<p class="muted">Chargement…</p>');
   if (SBs.err && !SBd.pseudo) return wrap(card(`<h3>Oups</h3><p class="muted small">${esc(SBs.err)}</p><button class="btn block" data-a="fr-retry">Réessayer</button><button class="btn ghost sm" data-a="fr-logout">Se déconnecter</button>`));
   if (!SBd.pseudo) return wrap(card(`<h3>Choisis ton pseudo</h3><p class="muted small">C’est ce que tes amis chercheront. 3 à 20 caractères : lettres minuscules, chiffres, _</p><input class="input" id="sb-pseudo" placeholder="ex : gaspard17" autocapitalize="off" autocomplete="off" maxlength="20"><button class="btn primary block" data-a="fr-pseudo">Valider</button>`));
