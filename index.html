@@ -466,6 +466,20 @@ input,select,textarea,.input,.mini-field .input{font-size:16px!important}
 button.cal-d{-webkit-appearance:none;appearance:none;padding:0;font-family:inherit;cursor:pointer}
 .cal-grid{touch-action:pan-y}
 .sheet .item svg,.list > .item > svg{width:20px;height:20px;flex:none}
+.av{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;background:var(--accent);color:#fff;font-weight:800;font-size:17px}
+.av img,.pc-av img{width:100%;height:100%;object-fit:cover;display:block}
+.pcard{border-radius:22px;padding:22px 16px 18px;text-align:center;color:#fff;background:radial-gradient(120% 90% at 50% 0%,#F0686C 0%,#E5484D 38%,#8E1F27 100%);box-shadow:0 18px 40px -18px rgba(229,72,77,.7)}
+.pc-av{width:96px;height:96px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.85);font-size:40px;font-weight:800}
+.pc-name{font-size:24px;font-weight:800;overflow-wrap:anywhere}
+.pc-sub{font-size:13px;opacity:.9;margin-top:2px}
+.pc-streak{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0 12px;padding:10px 12px;border-radius:16px;background:rgba(0,0,0,.22);text-align:left}
+.pc-streak b{font-size:40px;line-height:1}
+.pc-streak span{font-size:13px;line-height:1.35}
+.pc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pc-s{padding:10px 8px;border-radius:14px;background:rgba(255,255,255,.14);display:flex;flex-direction:column;gap:2px}
+.pc-s b{font-size:19px}.pc-s span{font-size:11px;opacity:.88}
+.pc-row{margin-top:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.14);text-align:left;display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.pc-row b{text-align:right;overflow-wrap:anywhere}
 .ph-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .ph{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:3/4;background:var(--surface-2);padding:0}
 .ph img{width:100%;height:100%;object-fit:cover;display:block}
@@ -508,6 +522,7 @@ svg{max-width:100%}
 <div id="toast-root"></div>
 <input type="file" id="import-file" accept="application/json,.json" hidden>
 <input type="file" id="photo-file" accept="image/*" hidden>
+<input type="file" id="avatar-file" accept="image/*" hidden>
 
 <script>
 (() => {
@@ -1063,6 +1078,7 @@ const SB_URL = 'https://byjgpkoyvpircjjzysmo.supabase.co', SB_KEY = 'sb_publisha
 if (SB_URL && SB_KEY) { SBd.url = SB_URL; SBd.key = SB_KEY; }
 const sbSave = () => { try { localStorage.setItem(SBK, JSON.stringify(SBd)); } catch (e) {} };
 const SBs = { friends: [], stats: [], loading: false, err: '' };
+let SBboard = [];
 const sbOn = () => !!(SBd.url && SBd.key);
 async function sbReq(path, o = {}, retry = true) {
   const useSes = SBd.ses && !path.startsWith('/auth/');
@@ -1080,12 +1096,21 @@ function myStats() {
   const ws = S.workouts, d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   const W = 604800000, goal = S.settings.weekGoal || 3, cnt = k => ws.filter(w => w.endedAt >= d.getTime() - k * W && w.endedAt < d.getTime() - (k - 1) * W).length;
   let streak = 0, k = cnt(0) >= goal ? 0 : 1; while (k < 520 && cnt(k) >= goal) { streak++; k++; }
-  const last = ws.slice().sort((a, b) => b.endedAt - a.endedAt)[0];
-  return { week_count: cnt(0), week_goal: goal, streak, total: ws.length, last_at: last ? new Date(last.endedAt).toISOString() : null, last_name: last ? last.name : null };
+  const last = ws.slice().sort((a, b) => b.endedAt - a.endedAt)[0], first = ws.length ? Math.min(...ws.map(w => w.endedAt)) : null;
+  let best = 0, run = 0; if (first) for (let j = Math.min(520, Math.ceil((d.getTime() - first) / W) + 1); j >= 0; j--) { if (cnt(j) >= goal) { run++; best = Math.max(best, run); } else run = 0; }
+  const mo = new Date(); mo.setDate(1); mo.setHours(0, 0, 0, 0);
+  const fav = {}; let bl = null; ws.forEach(w => (w.exercises || []).forEach(x => { if (!(x.sets || []).length) return; fav[x.name] = (fav[x.name] || 0) + 1; x.sets.forEach(s => { const kg = parseFloat(String(s.w).replace(',', '.')), r = parseFloat(s.r); if (kg > 0 && r > 0 && (!bl || kg > bl.kg)) bl = { name: x.name, kg }; }); }));
+  const fe = Object.keys(fav).sort((a, b) => fav[b] - fav[a])[0] || null;
+  return { week_count: cnt(0), week_goal: goal, streak, total: ws.length, last_at: last ? new Date(last.endedAt).toISOString() : null, last_name: last ? last.name : null,
+    display_name: S.settings.name || null, avatar: SBd.avatar || null, month_count: ws.filter(w => w.endedAt >= mo.getTime()).length, best_streak: best, fav_exercise: fe,
+    best_lift_name: bl ? bl.name : null, best_lift_kg: bl ? bl.kg : null, volume_kg: Math.round(ws.reduce((a, w) => a + (w.volume || 0), 0)), first_at: first ? new Date(first).toISOString() : null };
 }
 async function sbSync() {
   if (!SBd.ses || !SBd.pseudo) return;
-  try { await sbReq('/rest/v1/shared_stats?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: Object.assign({ user_id: SBd.ses.uid, updated_at: new Date().toISOString() }, myStats()) }); } catch (e) {}
+  const post = body => sbReq('/rest/v1/shared_stats?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body });
+  const base = { user_id: SBd.ses.uid, updated_at: new Date().toISOString() }, ms = myStats();
+  try { await post(Object.assign(base, ms)); }
+  catch (e) { try { await post(Object.assign(base, { week_count: ms.week_count, week_goal: ms.week_goal, streak: ms.streak, total: ms.total, last_at: ms.last_at, last_name: ms.last_name })); } catch (e2) {} }
 }
 async function sbLoad() {
   SBs.friends = await sbReq('/rest/v1/friendships?select=id,status,requester,addressee,rq:profiles!friendships_requester_fkey(pseudo),ad:profiles!friendships_addressee_fkey(pseudo)') || [];
@@ -1114,6 +1139,22 @@ async function sbAuth(mode) {
   } catch (e) { toast(/already|registered/i.test(e.message) ? 'Ce pseudo est déjà pris' : /invalid login/i.test(e.message) ? 'Pseudo ou mot de passe incorrect' : e.message); }
 }
 const inviteLink = () => location.origin + location.pathname + '#ami=' + SBd.pseudo;
+const okAv = a => typeof a === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]{1,60000}$/.test(a) ? a : '';
+const lvl = n => n >= 150 ? ['Légende', '👑'] : n >= 75 ? ['Machine', '⚙️'] : n >= 30 ? ['Assidu', '💪'] : n >= 10 ? ['Régulier', '🔥'] : ['Rookie', '🌱'];
+function avatarEl(b, cls = 'av') {
+  const st = b.st || {}, nm = st.display_name || b.pseudo, a = okAv(st.avatar);
+  return `<span class="${cls}">${a ? `<img src="${a}" alt="">` : esc(String(nm || '?').charAt(0).toUpperCase())}</span>`;
+}
+function profileCard(b) {
+  const st = b.st || {}, nm = st.display_name || b.pseudo, [lv, ic] = lvl(Number(st.total) || 0), n = v => Number(v) || 0;
+  const cell = (v, l) => `<div class="pc-s"><b class="num">${v}</b><span>${l}</span></div>`;
+  const row = (l, v) => `<div class="pc-row"><span>${l}</span><b>${v}</b></div>`;
+  const since = st.first_at ? new Date(st.first_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '–';
+  return `<div class="pcard">${avatarEl(b, 'pc-av')}<div class="pc-name">${esc(nm)}</div><div class="pc-sub">@${esc(b.pseudo)} · ${ic} ${lv}</div>
+  <div class="pc-streak"><b class="num">${n(st.streak)}</b><span>${n(st.streak) > 1 ? 'semaines' : 'semaine'} de série 🔥<br>record : ${n(st.best_streak)}</span></div>
+  <div class="pc-grid">${cell(n(st.week_count) + '/' + (n(st.week_goal) || '–'), 'Cette semaine')}${cell(n(st.month_count), 'Ce mois-ci')}${cell(n(st.total), 'Séances')}${cell((n(st.volume_kg) / 1000).toFixed(1) + ' t', 'Soulevées')}</div>
+  ${row('Exercice favori', esc(st.fav_exercise || '–'))}${row('Record', st.best_lift_name ? esc(st.best_lift_name) + ' · ' + n(st.best_lift_kg) + ' kg' : '–')}${row('Dernière séance', st.last_at ? esc(relDay(new Date(st.last_at).getTime())) : '–')}${row('Depuis', esc(since))}</div>`;
+}
 function friendsCard() {
   return `<button class="card tight row between" style="text-align:left;width:100%" data-a="open-friends"><div class="grow"><h3>Amis</h3><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · classement de la semaine' : 'Compare-toi à tes potes'}</div></div><span class="muted">${I.next.replace('<svg', '<svg width="18" height="18"')}</span></button>`;
 }
@@ -1130,9 +1171,10 @@ function viewFriends() {
   const acc = fr.filter(f => f.status === 'accepted'), inc = fr.filter(f => f.status === 'pending' && f.addressee === me), out = fr.filter(f => f.status === 'pending' && f.requester === me);
   const board = [{ pseudo: SBd.pseudo, me: true, st: myStats() }].concat(acc.map(f => ({ f, pseudo: (oth(f) || {}).pseudo || '?', st: SBs.stats.find(x => x.user_id === othId(f)) })));
   board.sort((a, b) => ((b.st ? b.st.week_count : 0) - (a.st ? a.st.week_count : 0)) || ((b.st ? b.st.streak : 0) - (a.st ? a.st.streak : 0)));
+  SBboard = board;
   let h = '';
   if (ui.invite && ui.invite !== SBd.pseudo && !fr.some(f => (oth(f) || {}).pseudo === ui.invite)) h += card(`<h3>Invitation</h3><p class="small">Ajouter <b>@${esc(ui.invite)}</b> en ami ?</p><button class="btn primary block" data-a="fr-add" data-p="${esc(ui.invite)}">Envoyer la demande</button>`);
-  h += `<section class="stack"><div class="section-head"><h2>Cette semaine</h2><span class="xs muted">@${esc(SBd.pseudo)}</span></div><div class="list">${board.map((b, i) => `<div class="item"><div class="grow" style="min-width:0"><div style="font-weight:650;overflow-wrap:anywhere">#${i + 1} @${esc(b.pseudo)}${b.me ? ' (toi)' : ''}</div><div class="xs muted">${b.st ? `${plural(b.st.total, 'séance')} · série ${b.st.streak} sem.${b.st.last_name && b.st.last_at ? ' · ' + esc(b.st.last_name) + ', ' + esc(relDay(new Date(b.st.last_at).getTime()).toLowerCase()) : ''}` : 'Pas encore de stats'}</div></div><div class="num" style="font-weight:700;font-size:20px">${b.st ? b.st.week_count : 0}<span class="xs muted">/${b.st ? b.st.week_goal : '–'}</span></div>${b.f ? `<button class="icon-btn sm" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?" aria-label="Retirer cet ami">${I.trash}</button>` : ''}</div>`).join('')}</div>${acc.length ? '' : '<p class="muted small">Ajoute un ami pour te comparer.</p>'}</section>`;
+  h += `<section class="stack"><div class="section-head"><h2>Cette semaine</h2><span class="xs muted">@${esc(SBd.pseudo)}</span></div><div class="list">${board.map((b, i) => `<div class="item" data-a="fr-card" data-i="${i}" style="cursor:pointer">${avatarEl(b)}<div class="grow" style="min-width:0"><div style="font-weight:650;overflow-wrap:anywhere">#${i + 1} @${esc(b.pseudo)}${b.me ? ' (toi)' : ''}</div><div class="xs muted">${b.st ? `${plural(b.st.total, 'séance')} · série ${b.st.streak} sem.${b.st.last_name && b.st.last_at ? ' · ' + esc(b.st.last_name) + ', ' + esc(relDay(new Date(b.st.last_at).getTime()).toLowerCase()) : ''}` : 'Pas encore de stats'}</div></div><div class="num" style="font-weight:700;font-size:20px">${b.st ? b.st.week_count : 0}<span class="xs muted">/${b.st ? b.st.week_goal : '–'}</span></div>${b.f ? `<button class="icon-btn sm" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?" aria-label="Retirer cet ami">${I.trash}</button>` : ''}</div>`).join('')}</div>${acc.length ? '' : '<p class="muted small">Ajoute un ami pour te comparer.</p>'}</section>`;
   if (inc.length) h += `<section class="stack"><div class="section-head"><h2>Demandes reçues</h2></div><div class="list">${inc.map(f => `<div class="item"><div class="grow" style="font-weight:650">@${esc((f.rq || {}).pseudo || '?')}</div><button class="btn sm primary" data-a="fr-ok" data-id="${f.id}">Accepter</button><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Refuser cette demande ?">Refuser</button></div>`).join('')}</div></section>`;
   h += card(`<h3>Ajouter un ami</h3><div class="row"><input class="input grow" id="sb-friend" placeholder="Son pseudo" autocapitalize="off" autocomplete="off" maxlength="21"><button class="btn primary" data-a="fr-add">Envoyer</button></div><button class="btn block" data-a="fr-share">Inviter par lien</button>`);
   if (out.length) h += `<section class="stack"><div class="section-head"><h2>Demandes envoyées</h2></div><div class="list">${out.map(f => `<div class="item"><div class="grow">@${esc((f.ad || {}).pseudo || '?')} <span class="xs muted">· en attente</span></div><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Annuler la demande ?">Annuler</button></div>`).join('')}</div></section>`;
@@ -1831,6 +1873,12 @@ const A = {
   },
   'open-friends': () => { go({ v: 'friends' }); if (SBd.ses) sbBoot(); },
   'fr-save-cfg': () => { const u = $('#sb-url').value.trim(), k = $('#sb-key').value.trim(); if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(u) || k.length < 20) return toast('URL (https://xxxx.supabase.co) ou clé invalide'); SBd.url = u; SBd.key = k; sbSave(); render(); },
+  'fr-card': d => {
+    const b = SBboard[+d.i]; if (!b) return;
+    modal(profileCard(b) + (b.me ? `<div class="row" style="margin-top:12px"><input class="input grow" id="pc-name" placeholder="Ton prénom" value="${esc(S.settings.name || '')}" maxlength="20" autocomplete="off"><button class="btn" data-a="fr-name">OK</button></div><button class="btn block" style="margin-top:8px" data-a="fr-avatar">Changer ma photo</button>` : '') + '<button class="btn ghost block" style="margin-top:8px" data-a="close">Fermer</button>');
+  },
+  'fr-avatar': () => $('#avatar-file').click(),
+  'fr-name': async () => { S.settings.name = $('#pc-name').value.trim().slice(0, 20); Store.touchLib(); await sbSync(); closeModal(); renderFr(); toast('Prénom enregistré'); },
   'fr-reset': () => { SBd.url = ''; SBd.key = ''; SBd.ses = null; SBd.pseudo = null; sbSave(); render(); },
   'fr-in': () => sbAuth('in'),
   'fr-up': () => sbAuth('up'),
@@ -1978,6 +2026,17 @@ document.addEventListener('click', ev => {
 let swX = null, swY = 0;
 document.addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('.cal-grid')) { swX = e.touches[0].clientX; swY = e.touches[0].clientY; } else swX = null; }, { passive: true });
 document.addEventListener('touchend', e => { if (swX == null) return; const t = e.changedTouches[0], dx = t.clientX - swX, dy = t.clientY - swY; swX = null; if (Math.abs(dx) > 60 && Math.abs(dy) < 40) A['cal-nav']({ d: dx < 0 ? 1 : -1 }); }, { passive: true });
+$('#avatar-file').addEventListener('change', ev => {
+  const f = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!f) return;
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = () => {
+    const c = document.createElement('canvas'), z = 192, m = Math.min(img.width, img.height); c.width = c.height = z;
+    c.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, z, z); URL.revokeObjectURL(url);
+    SBd.avatar = c.toDataURL('image/jpeg', .72); sbSave(); closeModal(); renderFr(); sbSync().then(sbLoad).then(renderFr).catch(() => {}); toast('Photo de profil mise à jour');
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('Image non reconnue'); };
+  img.src = url;
+});
 $('#photo-file').addEventListener('change', ev => {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!f) return;
   const img = new Image(), url = URL.createObjectURL(f);
