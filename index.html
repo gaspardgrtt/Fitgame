@@ -467,6 +467,7 @@ button.cal-d{-webkit-appearance:none;appearance:none;padding:0;font-family:inher
 .cal-grid{touch-action:pan-y}
 .sheet .item svg,.list > .item > svg{width:20px;height:20px;flex:none}
 .av{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;background:var(--accent);color:#fff;font-weight:800;font-size:17px}
+.av.lg{width:64px;height:64px;font-size:26px}
 .av img,.pc-av img{width:100%;height:100%;object-fit:cover;display:block}
 .pcard{border-radius:22px;padding:22px 16px 18px;text-align:center;color:#fff;background:radial-gradient(120% 90% at 50% 0%,#F0686C 0%,#E5484D 38%,#8E1F27 100%);box-shadow:0 18px 40px -18px rgba(229,72,77,.7)}
 .pc-av{width:96px;height:96px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.85);font-size:40px;font-weight:800}
@@ -1077,7 +1078,8 @@ const SBd = (() => { try { return JSON.parse(localStorage.getItem(SBK)) || {}; }
 const SB_URL = 'https://byjgpkoyvpircjjzysmo.supabase.co', SB_KEY = 'sb_publishable_vRuIiBWxjJWRHj4JTCxsGw_Rmqj6Pn9';
 if (SB_URL && SB_KEY) { SBd.url = SB_URL; SBd.key = SB_KEY; }
 const sbSave = () => { try { localStorage.setItem(SBK, JSON.stringify(SBd)); } catch (e) {} };
-const SBs = { friends: [], stats: [], loading: false, err: '' };
+const SBs = { friends: [], stats: [], prof: {}, loading: false, err: '' };
+const rerender = () => { const y = appY(); render(); appScroll(y); };
 let SBboard = [];
 const sbOn = () => !!(SBd.url && SBd.key);
 async function sbReq(path, o = {}, retry = true) {
@@ -1092,7 +1094,7 @@ async function sbReq(path, o = {}, retry = true) {
 function sbSetSes(j) { SBd.ses = { access_token: j.access_token, refresh_token: j.refresh_token, uid: j.user.id, email: j.user.email }; sbSave(); }
 async function sbRefresh() { try { sbSetSes(await sbReq('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: SBd.ses.refresh_token } }, false)); return true; } catch (e) { SBd.ses = null; SBd.pseudo = null; sbSave(); return false; } }
 const renderFr = () => { const t = top(); if (t && t.v === 'friends') { const y = appY(); render(); appScroll(y); } };
-function myStats() {
+function myStats(raw) {
   const ws = S.workouts, d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   const W = 604800000, goal = S.settings.weekGoal || 3, cnt = k => ws.filter(w => w.endedAt >= d.getTime() - k * W && w.endedAt < d.getTime() - (k - 1) * W).length;
   let streak = 0, k = cnt(0) >= goal ? 0 : 1; while (k < 520 && cnt(k) >= goal) { streak++; k++; }
@@ -1101,20 +1103,27 @@ function myStats() {
   const mo = new Date(); mo.setDate(1); mo.setHours(0, 0, 0, 0);
   const fav = {}; let bl = null; ws.forEach(w => (w.exercises || []).forEach(x => { if (!(x.sets || []).length) return; fav[x.name] = (fav[x.name] || 0) + 1; x.sets.forEach(s => { const kg = parseFloat(String(s.w).replace(',', '.')), r = parseFloat(s.r); if (kg > 0 && r > 0 && (!bl || kg > bl.kg)) bl = { name: x.name, kg }; }); }));
   const fe = Object.keys(fav).sort((a, b) => fav[b] - fav[a])[0] || null;
-  return { week_count: cnt(0), week_goal: goal, streak, total: ws.length, last_at: last ? new Date(last.endedAt).toISOString() : null, last_name: last ? last.name : null,
+  const r = { week_count: cnt(0), week_goal: goal, streak, total: ws.length, last_at: last ? new Date(last.endedAt).toISOString() : null, last_name: last ? last.name : null,
     display_name: S.settings.name || null, avatar: SBd.avatar || null, month_count: ws.filter(w => w.endedAt >= mo.getTime()).length, best_streak: best, fav_exercise: fe,
     best_lift_name: bl ? bl.name : null, best_lift_kg: bl ? bl.kg : null, volume_kg: Math.round(ws.reduce((a, w) => a + (w.volume || 0), 0)), first_at: first ? new Date(first).toISOString() : null };
+  const p = S.settings.profile || {};
+  if (!raw) { if (p.fav) r.fav_exercise = p.fav; if (p.liftName) { r.best_lift_name = p.liftName; r.best_lift_kg = p.liftKg > 0 ? p.liftKg : null; } }
+  return r;
 }
 async function sbSync() {
   if (!SBd.ses || !SBd.pseudo) return;
   const post = body => sbReq('/rest/v1/shared_stats?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body });
-  const base = { user_id: SBd.ses.uid, updated_at: new Date().toISOString() }, ms = myStats();
+  const base = { user_id: SBd.ses.uid, updated_at: new Date().toISOString() }, ms = myStats(), pub = { avatar: ms.avatar, display_name: ms.display_name };
+  delete ms.avatar;
   try { await post(Object.assign(base, ms)); }
   catch (e) { try { await post(Object.assign(base, { week_count: ms.week_count, week_goal: ms.week_goal, streak: ms.streak, total: ms.total, last_at: ms.last_at, last_name: ms.last_name })); } catch (e2) {} }
+  try { await sbReq('/rest/v1/profiles?id=eq.' + SBd.ses.uid, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: pub }); } catch (e) {}
 }
 async function sbLoad() {
   SBs.friends = await sbReq('/rest/v1/friendships?select=id,status,requester,addressee,rq:profiles!friendships_requester_fkey(pseudo),ad:profiles!friendships_addressee_fkey(pseudo)') || [];
   SBs.stats = await sbReq('/rest/v1/shared_stats?select=*') || [];
+  const ids = Array.from(new Set(SBs.friends.map(f => f.requester === SBd.ses.uid ? f.addressee : f.requester))); SBs.prof = {};
+  if (ids.length) try { (await sbReq('/rest/v1/profiles?id=in.(' + ids.join(',') + ')&select=id,avatar,display_name') || []).forEach(p => { SBs.prof[p.id] = p; }); } catch (e) {}
 }
 async function sbBoot() {
   if (!SBd.ses) return renderFr();
@@ -1155,6 +1164,21 @@ function profileCard(b) {
   <div class="pc-grid">${cell(n(st.week_count) + '/' + (n(st.week_goal) || '–'), 'Cette semaine')}${cell(n(st.month_count), 'Ce mois-ci')}${cell(n(st.total), 'Séances')}${cell((n(st.volume_kg) / 1000).toFixed(1) + ' t', 'Soulevées')}</div>
   ${row('Exercice favori', esc(st.fav_exercise || '–'))}${row('Record', st.best_lift_name ? esc(st.best_lift_name) + ' · ' + n(st.best_lift_kg) + ' kg' : '–')}${row('Dernière séance', st.last_at ? esc(relDay(new Date(st.last_at).getTime())) : '–')}${row('Depuis', esc(since))}</div>`;
 }
+function profileEditor() {
+  const p = S.settings.profile || {}, au = myStats(true), me = SBboard.find(b => b.me) || { pseudo: SBd.pseudo, st: myStats() };
+  const f = (id, l, v, ph, extra = '') => `<label class="eyebrow" for="${id}" style="margin-top:10px;display:block">${l}</label><input class="input" id="${id}" value="${esc(v)}" placeholder="${esc(ph)}" autocomplete="off" ${extra}>`;
+  return `<h2>Mon profil</h2><button class="row" style="gap:12px;margin:12px 0 2px;width:100%;text-align:left" data-a="fr-avatar">${avatarEl(me, 'av lg')}<span class="grow"><b>Changer ma photo</b><div class="xs muted">Visible par tes amis</div></span></button>
+  ${f('pc-name', 'Prénom', S.settings.name || '', 'Ton prénom', 'maxlength="20"')}
+  ${f('pc-fav', 'Exercice favori', p.fav || '', au.fav_exercise ? 'Auto : ' + au.fav_exercise : 'Ex : Développé couché', 'maxlength="40"')}
+  ${f('pc-ln', 'Record : exercice', p.liftName || '', au.best_lift_name ? 'Auto : ' + au.best_lift_name : 'Ex : Squat', 'maxlength="40"')}
+  ${f('pc-lk', 'Record : charge (kg)', p.liftKg || '', au.best_lift_kg ? 'Auto : ' + au.best_lift_kg : 'Ex : 100', 'inputmode="decimal"')}
+  <p class="xs muted" style="margin-top:8px">Laisse vide pour que l’appli calcule tout seule à partir de tes séances.</p>
+  <div class="row" style="margin-top:12px"><button class="btn grow" data-a="close">Annuler</button><button class="btn primary grow" data-a="fr-save-profile">Enregistrer</button></div>`;
+}
+function profileBlock() {
+  const me = { pseudo: SBd.pseudo || '', st: myStats() };
+  return `<button class="card tight row between" style="text-align:left;width:100%;gap:14px" data-a="fr-edit">${avatarEl(me, 'av lg')}<div class="grow" style="min-width:0"><h3 style="overflow-wrap:anywhere">${esc(S.settings.name || SBd.pseudo || 'Mon profil')}</h3><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · ' : ''}Modifier ma photo et mes infos</div></div></button>`;
+}
 function friendsCard() {
   return `<button class="card tight row between" style="text-align:left;width:100%" data-a="open-friends"><div class="grow"><h3>Amis</h3><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · classement de la semaine' : 'Compare-toi à tes potes'}</div></div><span class="muted">${I.next.replace('<svg', '<svg width="18" height="18"')}</span></button>`;
 }
@@ -1169,11 +1193,13 @@ function viewFriends() {
   if (!SBd.pseudo) return wrap(card(`<h3>Choisis ton pseudo</h3><p class="muted small">C’est ce que tes amis chercheront. 3 à 20 caractères : lettres minuscules, chiffres, _</p><input class="input" id="sb-pseudo" placeholder="ex : gaspard17" autocapitalize="off" autocomplete="off" maxlength="20"><button class="btn primary block" data-a="fr-pseudo">Valider</button>`));
   const me = SBd.ses.uid, fr = SBs.friends, oth = f => f.requester === me ? f.ad : f.rq, othId = f => f.requester === me ? f.addressee : f.requester;
   const acc = fr.filter(f => f.status === 'accepted'), inc = fr.filter(f => f.status === 'pending' && f.addressee === me), out = fr.filter(f => f.status === 'pending' && f.requester === me);
-  const board = [{ pseudo: SBd.pseudo, me: true, st: myStats() }].concat(acc.map(f => ({ f, pseudo: (oth(f) || {}).pseudo || '?', st: SBs.stats.find(x => x.user_id === othId(f)) })));
+  const board = [{ pseudo: SBd.pseudo, me: true, st: myStats() }].concat(acc.map(f => ({ f, pseudo: (oth(f) || {}).pseudo || '?', st: (x => x ? Object.assign({}, x, (p => { const o = {}; if (p && p.avatar) o.avatar = p.avatar; if (p && p.display_name) o.display_name = p.display_name; return o; })(SBs.prof[othId(f)])) : null)(SBs.stats.find(x => x.user_id === othId(f))) })));
   board.sort((a, b) => ((b.st ? b.st.week_count : 0) - (a.st ? a.st.week_count : 0)) || ((b.st ? b.st.streak : 0) - (a.st ? a.st.streak : 0)));
   SBboard = board;
   let h = '';
   if (ui.invite && ui.invite !== SBd.pseudo && !fr.some(f => (oth(f) || {}).pseudo === ui.invite)) h += card(`<h3>Invitation</h3><p class="small">Ajouter <b>@${esc(ui.invite)}</b> en ami ?</p><button class="btn primary block" data-a="fr-add" data-p="${esc(ui.invite)}">Envoyer la demande</button>`);
+  const meB = board.find(b => b.me);
+  h += `<button class="card tight row between" style="text-align:left;width:100%;gap:12px" data-a="fr-edit">${avatarEl(meB, 'av lg')}<div class="grow" style="min-width:0"><h3 style="overflow-wrap:anywhere">${esc((meB.st && meB.st.display_name) || meB.pseudo)}</h3><div class="xs muted">Modifier ma photo et mon profil</div></div></button>`;
   h += `<section class="stack"><div class="section-head"><h2>Cette semaine</h2><span class="xs muted">@${esc(SBd.pseudo)}</span></div><div class="list">${board.map((b, i) => `<div class="item" data-a="fr-card" data-i="${i}" style="cursor:pointer">${avatarEl(b)}<div class="grow" style="min-width:0"><div style="font-weight:650;overflow-wrap:anywhere">#${i + 1} @${esc(b.pseudo)}${b.me ? ' (toi)' : ''}</div><div class="xs muted">${b.st ? `${plural(b.st.total, 'séance')} · série ${b.st.streak} sem.${b.st.last_name && b.st.last_at ? ' · ' + esc(b.st.last_name) + ', ' + esc(relDay(new Date(b.st.last_at).getTime()).toLowerCase()) : ''}` : 'Pas encore de stats'}</div></div><div class="num" style="font-weight:700;font-size:20px">${b.st ? b.st.week_count : 0}<span class="xs muted">/${b.st ? b.st.week_goal : '–'}</span></div>${b.f ? `<button class="icon-btn sm" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?" aria-label="Retirer cet ami">${I.trash}</button>` : ''}</div>`).join('')}</div>${acc.length ? '' : '<p class="muted small">Ajoute un ami pour te comparer.</p>'}</section>`;
   if (inc.length) h += `<section class="stack"><div class="section-head"><h2>Demandes reçues</h2></div><div class="list">${inc.map(f => `<div class="item"><div class="grow" style="font-weight:650">@${esc((f.rq || {}).pseudo || '?')}</div><button class="btn sm primary" data-a="fr-ok" data-id="${f.id}">Accepter</button><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Refuser cette demande ?">Refuser</button></div>`).join('')}</div></section>`;
   h += card(`<h3>Ajouter un ami</h3><div class="row"><input class="input grow" id="sb-friend" placeholder="Son pseudo" autocapitalize="off" autocomplete="off" maxlength="21"><button class="btn primary" data-a="fr-add">Envoyer</button></div><button class="btn block" data-a="fr-share">Inviter par lien</button>`);
@@ -1671,7 +1697,7 @@ function viewProfile() {
     : mode === 'syncing' || mode === 'connecting' ? 'Connexion au stockage en ligne…'
     : mode === 'error' ? "Le stockage en ligne ne répond pas pour le moment. Tes saisies restent enregistrées sur cet appareil et seront envoyées dès le retour de la connexion."
     : "Le stockage en ligne n'est pas disponible ici (page ouverte hors de Claude ou session non connectée). Les données restent dans ce navigateur : exporte régulièrement une sauvegarde.";
-  return `<div class="stack-lg"><div class="row between" style="padding-top:6px"><h1>Profil</h1></div>
+  return `<div class="stack-lg"><div class="row between" style="padding-top:6px"><h1>Profil</h1></div>${profileBlock()}
   <section class="stack"><div class="field"><label for="set-name">Prénom</label><input class="input" id="set-name" data-bind="set-name" value="${esc(s.name)}" placeholder="Pour l'accueil" maxlength="30"></div></section>
   <section class="stack"><h2>Apparence</h2><div class="seg" role="group" aria-label="Thème">${[['light', 'Clair'], ['dark', 'Sombre'], ['auto', 'Automatique']].map(([k, l]) => `<button class="${(s.theme || 'light') === k ? 'on' : ''}" data-a="theme" data-k="${k}" aria-pressed="${(s.theme || 'light') === k}">${l}</button>`).join('')}</div></section>
   <section class="stack"><h2>Entraînement</h2><div class="list">
@@ -1875,10 +1901,16 @@ const A = {
   'fr-save-cfg': () => { const u = $('#sb-url').value.trim(), k = $('#sb-key').value.trim(); if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(u) || k.length < 20) return toast('URL (https://xxxx.supabase.co) ou clé invalide'); SBd.url = u; SBd.key = k; sbSave(); render(); },
   'fr-card': d => {
     const b = SBboard[+d.i]; if (!b) return;
-    modal(profileCard(b) + (b.me ? `<div class="row" style="margin-top:12px"><input class="input grow" id="pc-name" placeholder="Ton prénom" value="${esc(S.settings.name || '')}" maxlength="20" autocomplete="off"><button class="btn" data-a="fr-name">OK</button></div><button class="btn block" style="margin-top:8px" data-a="fr-avatar">Changer ma photo</button>` : '') + '<button class="btn ghost block" style="margin-top:8px" data-a="close">Fermer</button>');
+    modal(profileCard(b) + (b.me ? '<button class="btn block" style="margin-top:12px" data-a="fr-edit">Modifier mon profil</button>' : '') + '<button class="btn ghost block" style="margin-top:8px" data-a="close">Fermer</button>');
   },
   'fr-avatar': () => $('#avatar-file').click(),
-  'fr-name': async () => { S.settings.name = $('#pc-name').value.trim().slice(0, 20); Store.touchLib(); await sbSync(); closeModal(); renderFr(); toast('Prénom enregistré'); },
+  'fr-edit': () => modal(profileEditor()),
+  'fr-save-profile': async () => {
+    const g = id => $('#' + id).value.trim(), kg = parseFloat(g('pc-lk').replace(',', '.'));
+    S.settings.name = g('pc-name').slice(0, 20);
+    S.settings.profile = { fav: g('pc-fav').slice(0, 40), liftName: g('pc-ln').slice(0, 40), liftKg: kg > 0 ? Math.min(kg, 999) : 0 };
+    Store.touchLib(); closeModal(); rerender(); toast('Profil enregistré'); await sbSync(); if (SBd.ses && SBd.pseudo) { try { await sbLoad(); } catch (e) {} } rerender();
+  },
   'fr-reset': () => { SBd.url = ''; SBd.key = ''; SBd.ses = null; SBd.pseudo = null; sbSave(); render(); },
   'fr-in': () => sbAuth('in'),
   'fr-up': () => sbAuth('up'),
@@ -2032,7 +2064,7 @@ $('#avatar-file').addEventListener('change', ev => {
   img.onload = () => {
     const c = document.createElement('canvas'), z = 192, m = Math.min(img.width, img.height); c.width = c.height = z;
     c.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, z, z); URL.revokeObjectURL(url);
-    SBd.avatar = c.toDataURL('image/jpeg', .72); sbSave(); closeModal(); renderFr(); sbSync().then(sbLoad).then(renderFr).catch(() => {}); toast('Photo de profil mise à jour');
+    SBd.avatar = c.toDataURL('image/jpeg', .72); sbSave(); closeModal(); rerender(); toast('Photo de profil mise à jour'); sbSync().then(() => SBd.ses && SBd.pseudo ? sbLoad() : 0).then(rerender).catch(() => {});
   };
   img.onerror = () => { URL.revokeObjectURL(url); toast('Image non reconnue'); };
   img.src = url;
