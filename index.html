@@ -609,7 +609,7 @@ const plural = (n, a, b) => `${n} ${n > 1 ? (b || a + 's') : a}`;
 const KEY = 'carnet-fonte.v1';
 const DEFAULT = () => ({
   v: 1,
-  settings: { name: '', rest: 90, autoRest: true, sound: true, vibrate: true, weekGoal: 3, theme: 'light' },
+  settings: { name: '', rest: 90, reps: 10, autoRest: true, sound: true, vibrate: true, weekGoal: 3, theme: 'light' },
   templates: [], customExercises: [], workouts: [],
   active: null, libUpdatedAt: 0, activeUpdatedAt: 0, tombstones: []
 });
@@ -878,7 +878,7 @@ function render() {
   let html = '';
   const inWorkout = t && t.v === 'workout';
   if (t) {
-    html = ({ editor: viewEditor, library: viewLibrary, workout: viewWorkout, summary: viewSummary, wdetail: viewWorkoutDetail, exercise: viewExercise, photos: viewPhotos })[t.v](t);
+    html = ({ editor: viewEditor, library: viewLibrary, workout: viewWorkout, summary: viewSummary, wdetail: viewWorkoutDetail, exercise: viewExercise, photos: viewPhotos, friends: viewFriends })[t.v](t);
   } else {
     html = ({ home: viewHome, templates: viewTemplates, history: viewHistory, progress: viewProgress, profile: viewProfile })[tab]();
   }
@@ -996,6 +996,14 @@ function calendar() {
   <div class="cal-legend"><span><i style="background:var(--accent)"></i>Entraîné</span><span><i style="background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)"></i>Pas allé</span></div>
   <div class="row between wrap" style="gap:6px"><span class="xs muted">Touche un jour passé pour l’ajouter</span><span class="small"><b class="num">${trained}</b> <span class="muted">${trained > 1 ? 'jours' : 'jour'} · </span><b class="num">${missed}</b> <span class="muted">sans</span></span></div></div></section>`;
 }
+const Clip = { get() { try { return JSON.parse(localStorage.getItem('fonte-clip')); } catch (e) { return null; } }, set(c) { try { localStorage.setItem('fonte-clip', JSON.stringify(c)); } catch (e) {} } };
+function pasteWorkout(t) {
+  const c = Clip.get(); if (!c) return;
+  const d = new Date(t); d.setHours(18, 0, 0, 0); const e = Math.min(d.getTime(), Date.now()), dur = c.duration || 0;
+  const w = { id: uid(), templateId: c.templateId || null, name: c.name, startedAt: e - dur * 1000, endedAt: e, duration: dur, exercises: JSON.parse(JSON.stringify(c.exercises || [])), prs: [], volume: c.volume || 0, setCount: c.setCount || 0 };
+  S.workouts.push(w); Store.pushWorkout(w); closeModal(); const y = appY(); render(); appScroll(y);
+  toast('Séance collée au ' + fmtDate(t, { day: 'numeric', month: 'long' }));
+}
 function addPastWorkout(t, name, tid) {
   const d = new Date(t); d.setHours(18, 0, 0, 0); const e = Math.min(d.getTime(), Date.now());
   const w = { id: uid(), templateId: tid || null, name, startedAt: e, endedAt: e, duration: 0, exercises: [], prs: [], volume: 0, setCount: 0, manual: true };
@@ -1046,6 +1054,89 @@ function cmpModal() {
   const opt = sel => asc.map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${esc(phDate(p.t))}</option>`).join('');
   modal(`<h2>Comparer</h2><div class="cmp"><div><select class="input" data-bind="cmp-a" aria-label="Avant">${opt(a.id)}</select><img src="${a.d}" alt=""></div><div><select class="input" data-bind="cmp-b" aria-label="Après">${opt(b.id)}</select><img src="${b.d}" alt=""></div></div><button class="btn ghost block" style="margin-top:10px" data-a="close">Fermer</button>`);
 }
+
+/* ───────────── Amis (Supabase, sans bibliothèque) ───────────── */
+const SBK = 'fonte-sb';
+const SBd = (() => { try { return JSON.parse(localStorage.getItem(SBK)) || {}; } catch (e) { return {}; } })();
+const sbSave = () => { try { localStorage.setItem(SBK, JSON.stringify(SBd)); } catch (e) {} };
+const SBs = { friends: [], stats: [], loading: false, err: '' };
+const sbOn = () => !!(SBd.url && SBd.key);
+async function sbReq(path, o = {}, retry = true) {
+  const useSes = SBd.ses && !path.startsWith('/auth/');
+  const h = Object.assign({ apikey: SBd.key, 'Content-Type': 'application/json', Authorization: 'Bearer ' + (useSes ? SBd.ses.access_token : SBd.key) }, o.headers || {});
+  const r = await fetch(SBd.url.replace(/\/+$/, '') + path, { method: o.method || 'GET', headers: h, body: o.body ? JSON.stringify(o.body) : undefined });
+  if (r.status === 401 && retry && useSes && SBd.ses.refresh_token && await sbRefresh()) return sbReq(path, o, false);
+  const txt = await r.text(); let j = null; try { j = txt ? JSON.parse(txt) : null; } catch (e) {}
+  if (!r.ok) throw new Error((j && (j.msg || j.message || j.error_description || j.error)) || ('Erreur ' + r.status));
+  return j;
+}
+function sbSetSes(j) { SBd.ses = { access_token: j.access_token, refresh_token: j.refresh_token, uid: j.user.id, email: j.user.email }; sbSave(); }
+async function sbRefresh() { try { sbSetSes(await sbReq('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: SBd.ses.refresh_token } }, false)); return true; } catch (e) { SBd.ses = null; SBd.pseudo = null; sbSave(); return false; } }
+const renderFr = () => { const t = top(); if (t && t.v === 'friends') { const y = appY(); render(); appScroll(y); } };
+function myStats() {
+  const ws = S.workouts, d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const W = 604800000, goal = S.settings.weekGoal || 3, cnt = k => ws.filter(w => w.endedAt >= d.getTime() - k * W && w.endedAt < d.getTime() - (k - 1) * W).length;
+  let streak = 0, k = cnt(0) >= goal ? 0 : 1; while (k < 520 && cnt(k) >= goal) { streak++; k++; }
+  const last = ws.slice().sort((a, b) => b.endedAt - a.endedAt)[0];
+  return { week_count: cnt(0), week_goal: goal, streak, total: ws.length, last_at: last ? new Date(last.endedAt).toISOString() : null, last_name: last ? last.name : null };
+}
+async function sbSync() {
+  if (!SBd.ses || !SBd.pseudo) return;
+  try { await sbReq('/rest/v1/shared_stats?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: Object.assign({ user_id: SBd.ses.uid, updated_at: new Date().toISOString() }, myStats()) }); } catch (e) {}
+}
+async function sbLoad() {
+  SBs.friends = await sbReq('/rest/v1/friendships?select=id,status,requester,addressee,rq:profiles!friendships_requester_fkey(pseudo),ad:profiles!friendships_addressee_fkey(pseudo)') || [];
+  SBs.stats = await sbReq('/rest/v1/shared_stats?select=*') || [];
+}
+async function sbBoot() {
+  if (!SBd.ses) return renderFr();
+  SBs.loading = true; SBs.err = ''; renderFr();
+  try {
+    const p = await sbReq('/rest/v1/profiles?id=eq.' + SBd.ses.uid + '&select=pseudo');
+    SBd.pseudo = p && p[0] ? p[0].pseudo : null; sbSave();
+    if (SBd.pseudo) { await sbSync(); await sbLoad(); }
+  } catch (e) { SBs.err = e.message; }
+  SBs.loading = false; renderFr();
+}
+async function sbAuth(mode) {
+  const email = $('#sb-email').value.trim(), password = $('#sb-pw').value;
+  if (!email || password.length < 6) return toast('Email + mot de passe de 6 caractères minimum');
+  try {
+    const j = await sbReq(mode === 'up' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password } });
+    if (j && j.access_token) { sbSetSes(j); await sbBoot(); } else toast('Compte créé : confirme ton email, puis connecte-toi');
+  } catch (e) { toast(e.message); }
+}
+const inviteLink = () => location.origin + location.pathname + '#ami=' + SBd.pseudo;
+function friendsCard() {
+  return `<button class="card tight row between" style="text-align:left;width:100%" data-a="open-friends"><div class="grow"><h3>Amis</h3><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · classement de la semaine' : 'Compare-toi à tes potes'}</div></div><span class="muted">${I.next.replace('<svg', '<svg width="18" height="18"')}</span></button>`;
+}
+function viewFriends() {
+  const bar = `<div class="topbar"><button class="icon-btn" data-a="back" aria-label="Retour">${I.back}</button><span class="title">Amis</span></div>`;
+  const wrap = x => `${bar}<div class="stack-lg" style="margin-top:8px">${x}</div>`;
+  const card = x => `<div class="card stack">${x}</div>`;
+  if (!sbOn()) return wrap(card(`<h3>Brancher ton espace amis</h3><p class="muted small">Il faut un projet Supabase gratuit. Colle ici l’URL du projet et la clé « publishable » (ou « anon »). Jamais la clé « service_role ».</p><input class="input" id="sb-url" placeholder="https://xxxx.supabase.co" autocapitalize="off" autocomplete="off" inputmode="url"><input class="input" id="sb-key" placeholder="Clé publishable / anon" autocapitalize="off" autocomplete="off"><button class="btn primary block" data-a="fr-save-cfg">Enregistrer</button>`));
+  if (!SBd.ses) return wrap(card(`<h3>Connexion</h3><p class="muted small">Tes séances restent sur ton téléphone. Seul un petit résumé (séances de la semaine, série, total, dernière séance) est partagé avec tes amis acceptés.</p><input class="input" id="sb-email" type="email" placeholder="Email" autocapitalize="off" autocomplete="email"><input class="input" id="sb-pw" type="password" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password"><div class="row"><button class="btn primary grow" data-a="fr-in">Se connecter</button><button class="btn grow" data-a="fr-up">Créer un compte</button></div><button class="btn ghost sm" data-a="fr-reset">Changer de projet Supabase</button>`));
+  if (SBs.loading && !SBd.pseudo) return wrap('<p class="muted">Chargement…</p>');
+  if (SBs.err && !SBd.pseudo) return wrap(card(`<h3>Oups</h3><p class="muted small">${esc(SBs.err)}</p><button class="btn block" data-a="fr-retry">Réessayer</button><button class="btn ghost sm" data-a="fr-logout">Se déconnecter</button>`));
+  if (!SBd.pseudo) return wrap(card(`<h3>Choisis ton pseudo</h3><p class="muted small">C’est ce que tes amis chercheront. 3 à 20 caractères : lettres minuscules, chiffres, _</p><input class="input" id="sb-pseudo" placeholder="ex : gaspard17" autocapitalize="off" autocomplete="off" maxlength="20"><button class="btn primary block" data-a="fr-pseudo">Valider</button>`));
+  const me = SBd.ses.uid, fr = SBs.friends, oth = f => f.requester === me ? f.ad : f.rq, othId = f => f.requester === me ? f.addressee : f.requester;
+  const acc = fr.filter(f => f.status === 'accepted'), inc = fr.filter(f => f.status === 'pending' && f.addressee === me), out = fr.filter(f => f.status === 'pending' && f.requester === me);
+  const board = [{ pseudo: SBd.pseudo, me: true, st: myStats() }].concat(acc.map(f => ({ f, pseudo: (oth(f) || {}).pseudo || '?', st: SBs.stats.find(x => x.user_id === othId(f)) })));
+  board.sort((a, b) => ((b.st ? b.st.week_count : 0) - (a.st ? a.st.week_count : 0)) || ((b.st ? b.st.streak : 0) - (a.st ? a.st.streak : 0)));
+  let h = '';
+  if (ui.invite && ui.invite !== SBd.pseudo && !fr.some(f => (oth(f) || {}).pseudo === ui.invite)) h += card(`<h3>Invitation</h3><p class="small">Ajouter <b>@${esc(ui.invite)}</b> en ami ?</p><button class="btn primary block" data-a="fr-add" data-p="${esc(ui.invite)}">Envoyer la demande</button>`);
+  h += `<section class="stack"><div class="section-head"><h2>Cette semaine</h2><span class="xs muted">@${esc(SBd.pseudo)}</span></div><div class="list">${board.map((b, i) => `<div class="item"><div class="grow" style="min-width:0"><div style="font-weight:650;overflow-wrap:anywhere">#${i + 1} @${esc(b.pseudo)}${b.me ? ' (toi)' : ''}</div><div class="xs muted">${b.st ? `${plural(b.st.total, 'séance')} · série ${b.st.streak} sem.${b.st.last_name && b.st.last_at ? ' · ' + esc(b.st.last_name) + ', ' + esc(relDay(new Date(b.st.last_at).getTime()).toLowerCase()) : ''}` : 'Pas encore de stats'}</div></div><div class="num" style="font-weight:700;font-size:20px">${b.st ? b.st.week_count : 0}<span class="xs muted">/${b.st ? b.st.week_goal : '–'}</span></div>${b.f ? `<button class="icon-btn sm" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?" aria-label="Retirer cet ami">${I.trash}</button>` : ''}</div>`).join('')}</div>${acc.length ? '' : '<p class="muted small">Ajoute un ami pour te comparer.</p>'}</section>`;
+  if (inc.length) h += `<section class="stack"><div class="section-head"><h2>Demandes reçues</h2></div><div class="list">${inc.map(f => `<div class="item"><div class="grow" style="font-weight:650">@${esc((f.rq || {}).pseudo || '?')}</div><button class="btn sm primary" data-a="fr-ok" data-id="${f.id}">Accepter</button><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Refuser cette demande ?">Refuser</button></div>`).join('')}</div></section>`;
+  h += card(`<h3>Ajouter un ami</h3><div class="row"><input class="input grow" id="sb-friend" placeholder="Son pseudo" autocapitalize="off" autocomplete="off" maxlength="21"><button class="btn primary" data-a="fr-add">Envoyer</button></div><button class="btn block" data-a="fr-share">Inviter par lien</button>`);
+  if (out.length) h += `<section class="stack"><div class="section-head"><h2>Demandes envoyées</h2></div><div class="list">${out.map(f => `<div class="item"><div class="grow">@${esc((f.ad || {}).pseudo || '?')} <span class="xs muted">· en attente</span></div><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Annuler la demande ?">Annuler</button></div>`).join('')}</div></section>`;
+  if (SBs.err) h += `<p class="small" style="color:var(--bad,#c0392b)">${esc(SBs.err)}</p>`;
+  h += `<button class="btn ghost block" data-a="fr-logout">Se déconnecter</button>`;
+  return wrap(h);
+}
+setTimeout(() => {
+  const m = /#ami=([a-z0-9_]{3,20})/i.exec(location.hash);
+  if (m) { ui.invite = m[1].toLowerCase(); history.replaceState(null, '', location.pathname + location.search); go({ v: 'friends' }); if (SBd.ses) sbBoot(); }
+}, 0);
 
 /* ───────────── Templates ───────────── */
 function viewTemplates() {
@@ -1139,11 +1230,11 @@ function buildSessionExercise(exId, plan) {
   const ex = exById(exId);
   const last = lastPerf(exId);
   const n = plan ? Math.max(1, plan.sets || 3) : (last ? last.sets.length : 3);
-  const tr = plan ? targetFirstInt(plan.reps) : null;
+  const tr = plan ? targetFirstInt(plan.reps) : null, dr = String(S.settings.reps || 10);
   const sets = [];
   for (let i = 0; i < n; i++) {
     const p = last ? (last.sets[i] || last.sets[last.sets.length - 1]) : null;
-    sets.push({ w: p ? String(p.w ?? '') : '', r: p ? String(p.r) : (tr ? String(tr) : ''), done: false });
+    sets.push({ w: p ? String(p.w ?? '') : '', r: p ? String(p.r) : (tr ? String(tr) : dr), done: false });
   }
   return { key: uid(), exId, name: ex ? ex.name : 'Exercice', muscle: ex ? ex.muscle : '', rest: plan ? plan.rest : S.settings.rest, reps: plan ? plan.reps : '', notes: plan ? plan.notes || '' : '', sets };
 }
@@ -1264,6 +1355,7 @@ function finishSession(journal) {
   if (journal && (journal.forme || journal.sleep || journal.notes)) w.journal = journal;
   S.workouts.push(w);
   if (a.fillId) { S.workouts = S.workouts.filter(o => o.id !== a.fillId); Store.deleteWorkout(a.fillId); }
+  sbSync();
   S.active = null;
   Store.touchActive(true);
   Store.pushWorkout(w);
@@ -1349,7 +1441,7 @@ function viewWorkoutDetail(t) {
   <div class="kv"><div><div class="stat-v num">${w.duration ? fmtDur(w.duration) : '–'}</div><div class="stat-l">Durée</div></div><div><div class="stat-v num">${fmtVol(st.vol)}</div><div class="stat-l">Volume ${delta(st.vol, ps ? ps.vol : null, fmtVol)}</div></div><div><div class="stat-v num">${st.ex}</div><div class="stat-l">Exercices</div></div><div><div class="stat-v num">${st.sets}</div><div class="stat-l">Séries</div></div></div>
   ${(w.prs || []).length ? `<div class="list">${w.prs.map(p => `<div class="item"><span class="pill pr">${I.trophy.replace('<svg', '<svg width="12" height="12"')}</span><div class="grow"><div style="font-weight:650">${esc(p.name)}</div><div class="xs muted">${esc(p.label)}</div></div><span class="display num" style="font-size:19px;color:var(--accent)">${esc(p.value)}</span></div>`).join('')}</div>` : ''}
   ${w.exercises.length ? '' : `<button class="btn primary block" data-a="w-fill" data-id="${w.id}">${I.edit} Remplir la séance</button>`}
-  ${journalBlock(w)}${workoutDetailBlocks(w)}<button class="btn danger block" data-a="w-del" data-id="${w.id}">${I.trash} Supprimer cette séance</button></div>`;
+  ${journalBlock(w)}${workoutDetailBlocks(w)}${w.exercises.length ? `<button class="btn block" data-a="w-copy" data-id="${w.id}">Copier cette séance</button>` : ''}<button class="btn danger block" data-a="w-del" data-id="${w.id}">${I.trash} Supprimer cette séance</button></div>`;
 }
 
 /* ───────────── Progress ───────────── */
@@ -1437,7 +1529,7 @@ function viewProgress() {
   const volPM = S.workouts.filter(w => w.endedAt >= pm0.getTime() && w.endedAt < m0.getTime()).reduce((a, w) => a + (w.volume || 0), 0);
   const prs30 = S.workouts.filter(w => w.endedAt > now - 30 * DAY).reduce((a, w) => a + (w.prs || []).length, 0);
   const sess30 = S.workouts.filter(w => w.endedAt > now - 28 * DAY).length;
-  let h = `<div class="stack-lg"><div class="row between" style="padding-top:6px"><h1>Progression</h1></div>${photosCard()}${muscleSplit()}${monthReport()}`;
+  let h = `<div class="stack-lg"><div class="row between" style="padding-top:6px"><h1>Progression</h1></div>${photosCard()}${friendsCard()}${muscleSplit()}${monthReport()}`;
   if (!rows.length && !q) {
     return h + `<div class="empty"><h3>Pas encore de données</h3><p class="muted small">Termine une séance : chaque exercice aura sa fiche avec tes records, ton historique complet et des graphiques sur 1, 3, 6 mois ou tout l'historique.</p></div></div>`;
   }
@@ -1536,6 +1628,7 @@ function viewProfile() {
   <section class="stack"><h2>Entraînement</h2><div class="list">
    <div class="item"><div class="grow"><div style="font-weight:650">Objectif par semaine</div><div class="xs muted">Pour la série de semaines sur l'accueil</div></div><div class="stepper" style="width:124px"><button data-a="goal-step" data-d="-1" aria-label="Moins">−</button><span class="num">${s.weekGoal || 3}</span><button data-a="goal-step" data-d="1" aria-label="Plus">+</button></div></div>
    <div class="item"><div class="grow"><div style="font-weight:650">Repos par défaut</div><div class="xs muted">Pour les séances libres et les nouveaux exercices</div></div><select class="input num" style="width:100px;height:38px" id="set-rest" data-bind="set-rest">${[30, 45, 60, 75, 90, 120, 150, 180, 240].map(r => `<option value="${r}" ${r === s.rest ? 'selected' : ''}>${fmtClock(r)}</option>`).join('')}</select></div>
+   <div class="item"><div class="grow"><div style="font-weight:650">Nombre de reps par défaut</div><div class="xs muted">Pour les séances libres et les nouveaux exercices</div></div><select class="input num" style="width:100px;height:38px" id="set-reps" data-bind="set-reps">${Array.from({ length: 26 }, (_, i) => i + 5).map(r => `<option value="${r}" ${r === (s.reps || 10) ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
    ${[['autoRest', 'Chronomètre automatique', 'Lance le repos dès qu’une série est validée'], ['sound', 'Signal sonore', 'Bip à la fin du repos'], ['vibrate', 'Vibration', 'Si le téléphone le permet']].map(([k, l, d]) => `<button class="item" data-a="toggle" data-k="${k}" role="switch" aria-checked="${!!s[k]}"><div class="grow"><div style="font-weight:650">${l}</div><div class="xs muted">${d}</div></div><span class="switch ${s[k] ? 'on' : ''}"></span></button>`).join('')}
   </div></section>
   <section class="stack"><div class="section-head"><h2>Mes données</h2>${syncBadge()}</div>
@@ -1666,7 +1759,7 @@ const A = {
       S.active.cur = Math.max(0, S.active.exercises.length - p.sel.length); Store.touchActive(true);
     } else {
       const t = S.templates.find(x => x.id === p.target.tpl);
-      p.sel.forEach(id => t.items.push({ exId: id, sets: 3, reps: '8-12', rest: S.settings.rest, notes: '' }));
+      p.sel.forEach(id => t.items.push({ exId: id, sets: 3, reps: String(S.settings.reps || 10), rest: S.settings.rest, notes: '' }));
       tplTouched(t);
     }
     render(); toast(plural(p.sel.length, 'exercice ajouté', 'exercices ajoutés'));
@@ -1709,6 +1802,11 @@ const A = {
   'finish-ok': () => { const j = { forme: ui.forme || 0, sleep: ($('#j-sleep') || {}).value || '', notes: (($('#j-notes') || {}).value || '').trim() }; finishSession(j); },
   'rep-nav': d => { const now = new Date(); const m = new Date(ui.repMonth || new Date(now.getFullYear(), now.getMonth(), 1).getTime()); m.setMonth(m.getMonth() + +d.d); ui.repMonth = m.getTime(); const y = appY(); render(); appScroll(y); },
   'cal-nav': d => { const m = new Date(ui.calMonth || Date.now()); m.setDate(1); m.setHours(0, 0, 0, 0); m.setMonth(m.getMonth() + +d.d); ui.calMonth = m.getTime(); const y = appY(); render(); appScroll(y); },
+  'w-copy': d => {
+    const w = S.workouts.find(x => x.id === d.id); if (!w || !w.exercises.length) return;
+    Clip.set({ name: w.name, templateId: w.templateId, duration: w.duration, volume: w.volume, setCount: w.setCount, exercises: w.exercises });
+    closeModal(); toast('Séance copiée · ouvre le bon jour du calendrier pour la coller');
+  },
   'w-del': d => {
     const w = S.workouts.find(x => x.id === d.id); if (!w) return;
     confirmBox({ title: 'Supprimer cette séance ?', text: `« ${esc(w.name)} » du ${esc(fmtDate(w.endedAt, { day: 'numeric', month: 'long' }))} sera retirée de ton historique, de ton calendrier et de tes statistiques. Action définitive.`, ok: 'Supprimer', danger: true, onOk: () => {
@@ -1724,6 +1822,31 @@ const A = {
     Store.touchActive(true); closeModal(); stack = [{ v: 'workout' }]; render(); appScroll(0); wakeLock();
     if (!S.active.exercises.length) openPicker('session');
   },
+  'open-friends': () => { go({ v: 'friends' }); if (SBd.ses) sbBoot(); },
+  'fr-save-cfg': () => { const u = $('#sb-url').value.trim(), k = $('#sb-key').value.trim(); if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(u) || k.length < 20) return toast('URL (https://xxxx.supabase.co) ou clé invalide'); SBd.url = u; SBd.key = k; sbSave(); render(); },
+  'fr-reset': () => { SBd.url = ''; SBd.key = ''; SBd.ses = null; SBd.pseudo = null; sbSave(); render(); },
+  'fr-in': () => sbAuth('in'),
+  'fr-up': () => sbAuth('up'),
+  'fr-retry': () => sbBoot(),
+  'fr-logout': () => { SBd.ses = null; SBd.pseudo = null; SBs.friends = []; SBs.stats = []; sbSave(); render(); },
+  'fr-pseudo': async () => {
+    const v = $('#sb-pseudo').value.trim().toLowerCase(); if (!/^[a-z0-9_]{3,20}$/.test(v)) return toast('3 à 20 caractères : lettres, chiffres, _');
+    try { await sbReq('/rest/v1/profiles', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: { id: SBd.ses.uid, pseudo: v } }); SBd.pseudo = v; sbSave(); await sbSync(); await sbLoad(); renderFr(); }
+    catch (e) { toast(/duplicate|unique|23505/i.test(e.message) ? 'Ce pseudo est déjà pris' : e.message); }
+  },
+  'fr-add': async d => {
+    const v = String(d.p || ($('#sb-friend') || {}).value || '').trim().toLowerCase().replace(/^@/, ''); if (!v) return;
+    try {
+      const p = await sbReq('/rest/v1/profiles?pseudo=eq.' + encodeURIComponent(v) + '&select=id,pseudo');
+      if (!p || !p[0]) return toast('Aucun ami avec ce pseudo');
+      if (p[0].id === SBd.ses.uid) return toast('C’est ton propre pseudo');
+      await sbReq('/rest/v1/friendships', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: { requester: SBd.ses.uid, addressee: p[0].id } });
+      if (ui.invite === v) ui.invite = null; toast('Demande envoyée à @' + p[0].pseudo); await sbLoad(); renderFr();
+    } catch (e) { toast(/duplicate|unique|23505/i.test(e.message) ? 'Déjà demandé ou déjà amis' : e.message); }
+  },
+  'fr-ok': async d => { try { await sbReq('/rest/v1/friendships?id=eq.' + d.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { status: 'accepted' } }); await sbLoad(); renderFr(); } catch (e) { toast(e.message); } },
+  'fr-del': d => confirmBox({ title: d.t || 'Confirmer ?', text: 'Vous ne verrez plus les stats l’un de l’autre.', ok: 'Confirmer', danger: true, onOk: async () => { try { await sbReq('/rest/v1/friendships?id=eq.' + d.id, { method: 'DELETE' }); await sbLoad(); } catch (e) { toast(e.message); } closeModal(); renderFr(); } }),
+  'fr-share': () => { const u = inviteLink(); if (navigator.share) navigator.share({ title: 'Carnet de Fonte', text: 'Ajoute-moi en ami sur Carnet de Fonte', url: u }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => toast('Lien copié')); },
   'open-photos': () => go({ v: 'photos' }),
   'photo-add': () => $('#photo-file').click(),
   'photo-open': d => { const p = PH.find(x => x.id === d.id); if (!p) return; modal(`<h2>${esc(cap(fmtDateLong(p.t)))}</h2><img src="${p.d}" alt="" style="width:100%;max-height:60dvh;object-fit:contain;border-radius:12px;margin-top:12px"><div class="row" style="margin-top:14px"><button class="btn grow" data-a="close">Fermer</button><button class="btn danger grow" data-a="photo-del" data-id="${p.id}">Supprimer</button></div>`); },
@@ -1733,6 +1856,8 @@ const A = {
   'cal-day': d => {
     const t = +d.t, key = dkey(t);
     const items = S.workouts.filter(w => dkey(w.endedAt) === key).sort((a, b) => a.endedAt - b.endedAt).map(w => ({ label: esc(w.name) + (w.duration ? ' · ' + fmtDur(w.duration) : w.exercises.length ? ' · remplie' : ' · ajoutée à la main'), icon: I.dumbbell, run: () => { closeModal(); go({ v: 'wdetail', id: w.id }); } }));
+    S.workouts.filter(w => dkey(w.endedAt) === key && w.exercises.length).forEach(w => items.push({ label: 'Copier · ' + esc(w.name), icon: I.dumbbell, run: () => A['w-copy']({ id: w.id }) }));
+    const clip = Clip.get(); if (clip) items.push({ label: 'Coller · ' + esc(clip.name), icon: I.plus, run: () => pasteWorkout(t) });
     S.templates.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).forEach(tp => items.push({ label: 'Ajouter · ' + esc(tp.name), icon: I.plus, run: () => addPastWorkout(t, tp.name, tp.id) }));
     items.push({ label: 'Ajouter · Séance libre', icon: I.plus, run: () => addPastWorkout(t, 'Séance libre', null) });
     S.workouts.filter(w => dkey(w.endedAt) === key).forEach(w => items.push({ label: 'Supprimer · ' + esc(w.name), icon: I.trash, danger: true, run: () => A['w-del']({ id: w.id }) }));
@@ -1901,6 +2026,7 @@ document.addEventListener('change', ev => {
   const el = ev.target, b = el.dataset && el.dataset.bind;
   if (b === 'it-rest') { const t = curTpl(); t.items[+el.dataset.i].rest = +el.value; tplTouched(t); }
   if (b === 'set-rest') { S.settings.rest = +el.value; Store.touchLib(); }
+  if (b === 'set-reps') { S.settings.reps = +el.value; Store.touchLib(); }
   if (b === 'set-goal') { S.settings.weekGoal = +el.value; Store.touchLib(); }
   if (b === 'cmp-a' || b === 'cmp-b') { ui[b === 'cmp-a' ? 'cmpA' : 'cmpB'] = el.value; cmpModal(); }
 });
