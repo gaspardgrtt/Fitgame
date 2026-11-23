@@ -467,6 +467,35 @@ button.cal-d{-webkit-appearance:none;appearance:none;padding:0;font-family:inher
 .cal-grid{touch-action:pan-y}
 .sheet .item svg,.list > .item > svg{width:20px;height:20px;flex:none}
 .av{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;overflow:hidden;background:var(--accent);color:#fff;font-weight:800;font-size:17px}
+/* ───── Thème sombre rouge ───── */
+:root:not([data-ui="light"]){--bg:#070708;--surface:#111113;--surface-2:#18181B;--surface-3:#202024;--line:rgba(255,255,255,.09)}
+:root:not([data-ui="light"]) body{background:radial-gradient(75% 42% at 0% 0%,rgba(229,72,77,.24),transparent 62%),radial-gradient(65% 38% at 100% 100%,rgba(229,72,77,.18),transparent 62%),#070708}
+:root:not([data-ui="light"]) .liquid-bg{opacity:.3}
+:root:not([data-ui="light"]) .liquid-bg i:nth-child(2){display:none}
+:root:not([data-ui="light"]) :is(.card,.list,.tpl,.stats3,.kv > div,.hist-card,.empty,.ed-item,.trend){background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018)),#101012;border:1px solid rgba(255,255,255,.085);border-radius:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 30px -20px #000}
+:root:not([data-ui="light"]) .btn.primary{background:linear-gradient(180deg,#FF6468,#E5484D 55%,#B8343A);border-color:rgba(255,140,140,.55);color:#fff;box-shadow:0 12px 26px -12px rgba(229,72,77,.9),inset 0 1px 0 rgba(255,255,255,.38)}
+:root:not([data-ui="light"]) button.card[data-a="open-photos"],:root:not([data-ui="light"]) button.card[data-a="open-friends"]{background:linear-gradient(115deg,#FF6468,#DB3A40 55%,#A82A30);border-color:rgba(255,150,150,.55);color:#fff;box-shadow:0 16px 30px -16px rgba(229,72,77,.9),inset 0 1px 0 rgba(255,255,255,.4)}
+:root:not([data-ui="light"]) button.card[data-a="open-photos"] .muted,:root:not([data-ui="light"]) button.card[data-a="open-friends"] .muted{color:rgba(255,255,255,.88)}
+:root:not([data-ui="light"]) .nav{background:rgba(16,16,18,.8);border-color:rgba(255,255,255,.1);box-shadow:0 18px 40px -16px #000}
+:root:not([data-ui="light"]) .nav button.on,:root:not([data-ui="light"]) .nav button.on svg{color:#FF5A5F}
+:root:not([data-ui="light"]) .nav-blob{background:radial-gradient(circle,rgba(229,72,77,.38),rgba(229,72,77,0) 72%);box-shadow:none;border:0}
+:root:not([data-ui="light"]) .cal-d:not(.on):not(.miss){background:rgba(255,255,255,.045);border-radius:11px}
+.ring{position:relative;width:86px;height:86px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:7;stroke-linecap:round}
+.rg-bg{stroke:rgba(255,255,255,.09)}
+.rg-fg{stroke:var(--accent);filter:drop-shadow(0 0 6px rgba(229,72,77,.7));transition:stroke-dashoffset .6s}
+:root[data-ui="light"] .rg-bg{stroke:rgba(0,0,0,.08)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-display);font-size:32px;font-weight:700}
+.home-hero{background:none!important;border:0!important;padding:0!important;box-shadow:none!important}
+.home-hero .hero-week .eyebrow{display:none}
+.stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+.stats3 > div{display:flex;flex-direction:column;gap:2px;padding:12px;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+.stats3 .ico{color:var(--accent);margin-bottom:8px;display:block}
+.ic-circ{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3)}
+.ic-circ .ico{color:#fff}
+button.card[data-a="open-photos"],button.card[data-a="open-friends"]{gap:12px}
+:root:not([data-ui="light"]) .stats3 > div{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018)),#101012;border-color:rgba(255,255,255,.085)}
 .av.lg{width:64px;height:64px;font-size:26px}
 .av img,.pc-av img{width:100%;height:100%;object-fit:cover;display:block}
 .pcard{border-radius:22px;padding:22px 16px 18px;text-align:center;color:#fff;background:radial-gradient(120% 90% at 50% 0%,#F0686C 0%,#E5484D 38%,#8E1F27 100%);box-shadow:0 18px 40px -18px rgba(229,72,77,.7)}
@@ -625,7 +654,7 @@ const plural = (n, a, b) => `${n} ${n > 1 ? (b || a + 's') : a}`;
 const KEY = 'carnet-fonte.v1';
 const DEFAULT = () => ({
   v: 1,
-  settings: { name: '', rest: 90, reps: 10, autoRest: true, sound: true, vibrate: true, weekGoal: 3, theme: 'light' },
+  settings: { name: '', rest: 90, reps: 10, autoRest: true, sound: true, vibrate: true, weekGoal: 3, theme: 'dark' },
   templates: [], customExercises: [], workouts: [],
   active: null, libUpdatedAt: 0, activeUpdatedAt: 0, tombstones: []
 });
@@ -875,7 +904,8 @@ function setTab(t) { tab = t; stack = []; render(); appScroll(0); }
 /* ───────────── Render root ───────────── */
 const darkMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
 function applyTheme() {
-  const m = S.settings.theme || 'light';
+  if (!S.settings.redV) { S.settings.redV = 1; S.settings.theme = 'dark'; }
+  const m = S.settings.theme || 'dark';
   const dark = m === 'dark' || (m === 'auto' && darkMQ && darkMQ.matches);
   const v = dark ? 'dark' : 'light';
   if (document.documentElement.dataset.ui !== v) document.documentElement.dataset.ui = v;
@@ -947,21 +977,21 @@ function viewHome() {
   const totalVol = ws.reduce((a, w) => a + (w.volume || 0), 0);
 
   let h = `<div class="stack-lg">
-  <div class="row between" style="padding-top:6px"><div class="stack" style="gap:4px"><span class="eyebrow">${cap(fmtDate(now, { weekday: 'long', day: 'numeric', month: 'long' }))}</span><h1>${hello}${S.settings.name ? ', ' + esc(S.settings.name) : ''}</h1></div></div>`;
+  <div class="row between" style="padding-top:6px;gap:12px"><div class="stack" style="gap:6px;min-width:0"><h1 style="overflow-wrap:anywhere">${hello}${S.settings.name ? ', ' + esc(S.settings.name) : ','}</h1><span class="small muted">${cap(fmtDate(now, { weekday: 'long', day: 'numeric', month: 'long' }))}</span></div>${weekRing(thisWeek.length)}</div>`;
 
   if (S.active) {
     const a = S.active, done = a.exercises.reduce((n, x) => n + x.sets.filter(s => s.done).length, 0);
     h += `<button class="banner" data-a="resume" style="text-align:left"><span class="pulse"></span><div class="grow"><div style="font-weight:700">Séance en cours · ${esc(a.name)}</div><div class="small muted">${plural(done, 'série validée', 'séries validées')} · démarrée ${fmtClock((now - a.startedAt) / 1000)} plus tôt</div></div><span class="btn sm primary">Reprendre</span></button>`;
   }
 
-  h += `<section class="card stack" style="gap:16px">
+  h += `<section class="stack home-hero" style="gap:14px">
     <div class="hero-week"><div><div class="eyebrow" style="margin-bottom:8px">Cette semaine</div><div class="big num">${thisWeek.length}<small>/ ${weekStreak().g} ${weekStreak().g > 1 ? 'séances' : 'séance'}</small></div><button class="btn sm ghost" data-a="goal-edit" style="margin-top:8px;padding:0 8px;height:28px;color:var(--accent)">${I.edit} Modifier l'objectif</button></div>
     <div class="weekdots" aria-label="Jours entraînés cette semaine">${['L','M','M','J','V','S','D'].map((d, i) => `<span class="${i === todayIdx ? 'today' : ''}"><i class="${days.has(i) ? 'on' : ''}"></i>${d}</span>`).join('')}</div></div>
     ${(() => { const k = weekStreak(); return `<div class="stack" style="gap:8px"><div class="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${k.g}" aria-valuenow="${Math.min(k.cur, k.g)}" aria-label="Objectif de la semaine"><i style="width:${Math.min(100, k.cur / k.g * 100)}%"></i></div><div class="row between wrap" style="gap:6px"><span class="small muted">${k.cur >= k.g ? 'Objectif de la semaine atteint' : `Encore ${plural(k.g - k.cur, 'séance')} pour l'objectif`}</span><span class="streak">${k.streak ? `<span class="flame num">${k.streak}</span><span>${k.streak > 1 ? 'semaines d’affilée' : 'semaine validée'}</span>` : '<span class="muted small">Pas de série en cours</span>'}</span></div></div>`; })()}
     ${S.active ? `<button class="btn primary lg block" data-a="resume">${I.play} Reprendre la séance</button>` : `<button class="btn primary lg block" data-a="start-pick">${I.play} Commencer une séance</button>`}
   </section>`;
 
-  h += `<div class="stats3"><div><div class="stat-v num">${ws.length}</div><div class="stat-l">Séances au total</div></div><div><div class="stat-v num">${fmtVol(totalVol)}</div><div class="stat-l">Volume cumulé</div></div><div><div class="stat-v num">${ws.reduce((a, w) => a + (w.setCount || 0), 0)}</div><div class="stat-l">Séries validées</div></div></div>`;
+  h += `<div class="stats3"><div>${ICOS.film}<div class="stat-v num">${ws.length}</div><div class="stat-l">Séances au total</div></div><div>${ICOS.bag}<div class="stat-v num">${fmtVol(totalVol)}</div><div class="stat-l">Volume cumulé</div></div><div>${ICOS.check}<div class="stat-v num">${ws.reduce((a, w) => a + (w.setCount || 0), 0)}</div><div class="stat-l">Séries validées</div></div></div>`;
 
   h += calendar();
 
@@ -1056,7 +1086,7 @@ let PH = [];
 PhotoDB.all().then(a => { PH = (a || []).sort((x, y) => y.t - x.t); const t = top(); if (t && t.v === 'photos' || (!t && tab === 'progress')) render(); }).catch(() => {});
 const phDate = t => fmtDate(t, { day: 'numeric', month: 'short', year: 'numeric' });
 function photosCard() {
-  return `<button class="card tight row between" style="text-align:left;width:100%" data-a="open-photos"><div class="grow"><h3>Photos de progression</h3><div class="xs muted">${PH.length ? plural(PH.length, 'photo') + ' · dernière ' + relDay(PH[0].t).toLowerCase() : 'Ajoute ta première photo'}</div></div><span class="muted">${I.next.replace('<svg', '<svg width="18" height="18"')}</span></button>`;
+  return `<button class="card tight row between" style="text-align:left;width:100%" data-a="open-photos"><span class="ic-circ">${ICOS.img}</span><div class="grow"><h3>Photos de progression</h3><div class="xs muted">${PH.length ? plural(PH.length, 'photo') + ' · dernière ' + relDay(PH[0].t).toLowerCase() : 'Ajoute ta première photo'}</div></div><span class="muted">${I.next.replace('<svg', '<svg width="18" height="18"')}</span></button>`;
 }
 function viewPhotos() {
   return `<div class="topbar"><button class="icon-btn" data-a="back" aria-label="Retour">${I.back}</button><span class="title">Photos de progression</span></div>
@@ -1175,12 +1205,24 @@ function profileEditor() {
   <p class="xs muted" style="margin-top:8px">Laisse vide pour que l’appli calcule tout seule à partir de tes séances.</p>
   <div class="row" style="margin-top:12px"><button class="btn grow" data-a="close">Annuler</button><button class="btn primary grow" data-a="fr-save-profile">Enregistrer</button></div>`;
 }
+const ICO = p => `<svg class="ico" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICOS = {
+  film: ICO('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.5 9.5l4 2.5-4 2.5z"/>'),
+  bag: ICO('<path d="M6 8h12l1 12H5z"/><path d="M9 8a3 3 0 016 0"/>'),
+  check: ICO('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>'),
+  img: ICO('<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.7"/><path d="M4 18l5-5 4 4 3-3 4 4"/>'),
+  users: ICO('<circle cx="9" cy="9" r="3.2"/><path d="M3 20c.5-3.5 3-5 6-5s5.5 1.5 6 5"/><circle cx="17" cy="8" r="2.5"/><path d="M16.5 14c2.8.2 4.2 1.8 4.5 4"/>')
+};
+function weekRing(n) {
+  const k = weekStreak(), C = 2 * Math.PI * 36, pct = Math.min(1, k.cur / (k.g || 1));
+  return `<div class="ring" role="img" aria-label="${n} séance(s) cette semaine"><svg viewBox="0 0 88 88"><circle class="rg-bg" cx="44" cy="44" r="36"/><circle class="rg-fg" cx="44" cy="44" r="36" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg><b class="num">${n}</b></div>`;
+}
 function profileBlock() {
   const me = { pseudo: SBd.pseudo || '', st: myStats() };
   return `<button class="card tight row between" style="text-align:left;width:100%;gap:14px" data-a="fr-edit">${avatarEl(me, 'av lg')}<div class="grow" style="min-width:0"><h3 style="overflow-wrap:anywhere">${esc(S.settings.name || SBd.pseudo || 'Mon profil')}</h3><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · ' : ''}Modifier ma photo et mes infos</div></div></button>`;
 }
 function friendsCard() {
-  return `<button class="card tight row between" style="text-align:left;width:100%" data-a="open-friends"><div class="grow"><h3>Amis</h3><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · classement de la semaine' : 'Compare-toi à tes potes'}</div></div><span class="muted">${I.next.replace('<svg', '<svg width="18" height="18"')}</span></button>`;
+  return `<button class="card tight row between" style="text-align:left;width:100%" data-a="open-friends"><span class="ic-circ">${ICOS.users}</span><div class="grow"><h3>Amis</h3><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · classement de la semaine' : 'Compare-toi à tes potes'}</div></div><span class="muted">${I.next.replace('<svg', '<svg width="18" height="18"')}</span></button>`;
 }
 function viewFriends() {
   const bar = `<div class="topbar"><button class="icon-btn" data-a="back" aria-label="Retour">${I.back}</button><span class="title">Amis</span></div>`;
@@ -1699,7 +1741,7 @@ function viewProfile() {
     : "Le stockage en ligne n'est pas disponible ici (page ouverte hors de Claude ou session non connectée). Les données restent dans ce navigateur : exporte régulièrement une sauvegarde.";
   return `<div class="stack-lg"><div class="row between" style="padding-top:6px"><h1>Profil</h1></div>${profileBlock()}
   <section class="stack"><div class="field"><label for="set-name">Prénom</label><input class="input" id="set-name" data-bind="set-name" value="${esc(s.name)}" placeholder="Pour l'accueil" maxlength="30"></div></section>
-  <section class="stack"><h2>Apparence</h2><div class="seg" role="group" aria-label="Thème">${[['light', 'Clair'], ['dark', 'Sombre'], ['auto', 'Automatique']].map(([k, l]) => `<button class="${(s.theme || 'light') === k ? 'on' : ''}" data-a="theme" data-k="${k}" aria-pressed="${(s.theme || 'light') === k}">${l}</button>`).join('')}</div></section>
+  <section class="stack"><h2>Apparence</h2><div class="seg" role="group" aria-label="Thème">${[['light', 'Clair'], ['dark', 'Sombre'], ['auto', 'Automatique']].map(([k, l]) => `<button class="${(s.theme || 'dark') === k ? 'on' : ''}" data-a="theme" data-k="${k}" aria-pressed="${(s.theme || 'dark') === k}">${l}</button>`).join('')}</div></section>
   <section class="stack"><h2>Entraînement</h2><div class="list">
    <div class="item"><div class="grow"><div style="font-weight:650">Objectif par semaine</div><div class="xs muted">Pour la série de semaines sur l'accueil</div></div><div class="stepper" style="width:124px"><button data-a="goal-step" data-d="-1" aria-label="Moins">−</button><span class="num">${s.weekGoal || 3}</span><button data-a="goal-step" data-d="1" aria-label="Plus">+</button></div></div>
    <div class="item"><div class="grow"><div style="font-weight:650">Repos par défaut</div><div class="xs muted">Pour les séances libres et les nouveaux exercices</div></div><select class="input num" style="width:100px;height:38px" id="set-rest" data-bind="set-rest">${[30, 45, 60, 75, 90, 120, 150, 180, 240].map(r => `<option value="${r}" ${r === s.rest ? 'selected' : ''}>${fmtClock(r)}</option>`).join('')}</select></div>
