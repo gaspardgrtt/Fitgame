@@ -470,6 +470,7 @@ details.more .chev{transition:transform .2s var(--ease)}
 .nav button.on .ni{background:var(--accent-soft)}
 .nav button:active .ni{transform:scale(.92)}
 .kb .nav{transform:translateY(110%);opacity:0;pointer-events:none}
+.kb .rest-bar,.kb .bottom-bar,.kb .toast{visibility:hidden}
 
 /* ───── Feuilles, menus, toasts ───── */
 .overlay{position:fixed;inset:0;z-index:60;background:var(--overlay);display:flex;align-items:flex-end;justify-content:center;animation:fade .18s}
@@ -485,7 +486,44 @@ details.more .chev{transition:transform .2s var(--ease)}
 
 /* ───── Transitions de vue ───── */
 .view-in > *{animation:viewin .2s var(--ease) both}
+.view-in > .topbar,.view-in > .wk-head{animation:fade .2s both}
 @keyframes viewin{from{opacity:0;transform:translateY(6px)}}
+
+/* ───── Signature : rouge lumineux (inspiré de la maquette) ───── */
+:root{--grad:linear-gradient(180deg,#EE4A53 0%,#D52D3B 100%);--glow:0 8px 22px -10px rgba(213,45,59,.75)}
+:root[data-ui="dark"]{--bg:#0B0B0D;--surface:#141417;--surface-2:#1C1C20;--surface-3:#28282D;--line:rgba(255,255,255,.07);--grad:linear-gradient(180deg,#FF5A61 0%,#E5484D 55%,#C83238 100%);--glow:0 10px 26px -10px rgba(229,72,77,.8);--bar-bg:rgba(11,11,13,.86)}
+:root[data-ui="dark"] body{background:transparent}
+:root[data-ui="dark"] body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(90% 45% at 0% 0%,rgba(229,72,77,.16),transparent 65%),radial-gradient(80% 40% at 100% 100%,rgba(229,72,77,.10),transparent 65%)}
+:root[data-ui="dark"] :is(.card,.list,.tpl,.stats3 > div,.stats4 > div,.kv > div,.ed-item,.last-perf,.trend){background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)),var(--surface)}
+.btn.primary{background:var(--grad);border-color:transparent;box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.22)}
+.btn.primary:active{background:var(--accent-press);box-shadow:none}
+@media (hover:hover){.btn.primary:hover{background:var(--grad);filter:brightness(1.06)}}
+.btn.tint{border-color:color-mix(in srgb,var(--accent) 22%,transparent)}
+.wd-d.on,.cal-d.on,.check.on,.set-row.done .vbtn,.switch.on{background:var(--grad)}
+.goal-bar i,.mini i,.rest-track i{background:linear-gradient(90deg,#C83238,#F0555C)}
+:root[data-ui="dark"] .goal-bar i{box-shadow:0 0 10px rgba(229,72,77,.55)}
+.hello-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px}
+.hello-row .hello{min-width:0;padding:0}
+.ring-btn{flex:none;border-radius:50%}
+.ring{position:relative;width:84px;height:84px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:7;stroke-linecap:round}
+.rg-bg{stroke:var(--surface-3)}
+.rg-fg{stroke:var(--accent);transition:stroke-dashoffset .6s var(--ease)}
+:root[data-ui="dark"] .rg-fg{filter:drop-shadow(0 0 6px rgba(229,72,77,.7))}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-display);font-size:34px;font-weight:700}
+.st-ic{display:block;color:var(--accent);margin-bottom:6px}
+.st-ic svg{width:20px;height:20px}
+.hl-card{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:var(--r-lg);text-align:left;color:#fff;background:linear-gradient(115deg,#F0555C 0%,#D52D3B 55%,#A9232E 100%);box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .12s}
+.hl-card:active{transform:scale(.98)}
+.hl-ic{width:40px;height:40px;border-radius:12px;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28)}
+.hl-ic svg{width:20px;height:20px}
+.hl-t{font-weight:700;font-size:16px}
+.hl-s{font-size:12.5px;opacity:.88}
+.hl-card .chev{color:rgba(255,255,255,.85)}
+.nav button.on .ni{background:var(--accent-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent)}
+:root[data-ui="dark"] .nav button.on .ni{background:radial-gradient(circle,rgba(229,72,77,.32),rgba(229,72,77,.12) 70%)}
+:root[data-ui="dark"] .nav button.on{color:#FF5A5F}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (max-width:370px){
@@ -867,7 +905,7 @@ function applyTheme() {
   const dark = m === 'dark' || (m === 'auto' && darkMQ && darkMQ.matches);
   const v = dark ? 'dark' : 'light';
   if (document.documentElement.dataset.ui !== v) document.documentElement.dataset.ui = v;
-  const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = dark ? '#0E0F11' : '#F5F6F8';
+  const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = dark ? '#0B0B0D' : '#F5F6F8';
 }
 if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { if (S.settings.theme === 'auto') applyTheme(); });
 function appScroll(y) { window.scrollTo(0, y || 0); }
@@ -925,6 +963,10 @@ function weekStrip() {
     return `<div class="wd ${k === today ? 'today' : ''}"><span class="wd-l">${l}</span>${cell}</div>`;
   }).join('')}</div>`;
 }
+function weekRing(n, g) {
+  const C = 2 * Math.PI * 36, pct = Math.min(1, n / (g || 1));
+  return `<div class="ring" role="img" aria-label="${plural(n, 'séance')} sur ${g} cette semaine"><svg viewBox="0 0 88 88"><circle class="rg-bg" cx="44" cy="44" r="36"/><circle class="rg-fg" cx="44" cy="44" r="36" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg><b class="num">${n}</b></div>`;
+}
 const chev = () => `<span class="chev">${I.next}</span>`;
 function recentRecords(ws, n) {
   const out = [], seen = new Set();
@@ -942,7 +984,7 @@ function viewHome() {
   const k = weekStreak();
 
   let h = `<div class="stack-lg">
-  <header class="hello"><h1>${hello}${S.settings.name ? ', ' + esc(S.settings.name) : ''}</h1><span class="small muted">${cap(fmtDate(now, { weekday: 'long', day: 'numeric', month: 'long' }))}</span></header>`;
+  <header class="hello-row"><div class="hello"><h1>${hello}${S.settings.name ? ', ' + esc(S.settings.name) : ''}</h1><span class="small muted">${cap(fmtDate(now, { weekday: 'long', day: 'numeric', month: 'long' }))}</span></div><button class="ring-btn" data-a="goal-edit" aria-label="Objectif : ${k.cur} sur ${k.g}. Modifier l'objectif">${weekRing(k.cur, k.g)}</button></header>`;
 
   if (S.active) {
     const a = S.active, done = a.exercises.reduce((n, x) => n + x.sets.filter(s => s.done).length, 0);
@@ -958,7 +1000,7 @@ function viewHome() {
 
   h += S.active ? `<button class="btn primary lg block" data-a="resume">${I.play} Reprendre la séance</button>` : `<button class="btn primary lg block" data-a="start-pick">${I.play} Commencer une séance</button>`;
 
-  h += `<div class="stats3"><div><div class="stat-v num">${ws.length}</div><div class="stat-l">Séances</div></div><div><div class="stat-v num">${fmtVol(totalVol)}</div><div class="stat-l">Volume cumulé</div></div><div><div class="stat-v num">${ws.reduce((a, w) => a + (w.setCount || 0), 0)}</div><div class="stat-l">Séries validées</div></div></div>`;
+  h += `<div class="stats3"><div><span class="st-ic">${I.dumbbell}</span><div class="stat-v num">${ws.length}</div><div class="stat-l">Séances</div></div><div><span class="st-ic">${I.chart}</span><div class="stat-v num">${fmtVol(totalVol)}</div><div class="stat-l">Volume cumulé</div></div><div><span class="st-ic">${I.check}</span><div class="stat-v num">${ws.reduce((a, w) => a + (w.setCount || 0), 0)}</div><div class="stat-l">Séries validées</div></div></div>`;
 
   if (last) {
     const st = workoutStats(last);
@@ -1038,7 +1080,7 @@ let PH = [];
 PhotoDB.all().then(a => { PH = (a || []).sort((x, y) => y.t - x.t); const t = top(); if (t && t.v === 'photos' || (!t && tab === 'progress')) render(); }).catch(() => {});
 const phDate = t => fmtDate(t, { day: 'numeric', month: 'short', year: 'numeric' });
 function photosCard() {
-  return `<button class="item" data-a="open-photos"><span class="ic-dot grey">${I.image}</span><div class="grow"><div style="font-weight:650">Photos de progression</div><div class="xs muted">${PH.length ? plural(PH.length, 'photo') + ' · dernière ' + relDay(PH[0].t).toLowerCase() : 'Ajoute ta première photo'}</div></div>${chev()}</button>`;
+  return `<button class="hl-card" data-a="open-photos"><span class="hl-ic">${I.image}</span><div class="grow"><div class="hl-t">Photos de progression</div><div class="hl-s">${PH.length ? plural(PH.length, 'photo') + ' · dernière ' + relDay(PH[0].t).toLowerCase() : 'Ajoute ta première photo'}</div></div>${chev()}</button>`;
 }
 function viewPhotos() {
   return `<div class="topbar"><button class="icon-btn" data-a="back" aria-label="Retour">${I.back}</button><span class="title">Photos de progression</span></div>
@@ -1156,7 +1198,7 @@ function profileEditor() {
   <div class="row" style="margin-top:12px"><button class="btn grow" data-a="close">Annuler</button><button class="btn primary grow" data-a="fr-save-profile">Enregistrer</button></div>`;
 }
 function friendsCard() {
-  return `<button class="item" data-a="open-friends"><span class="ic-dot">${I.users}</span><div class="grow"><div style="font-weight:650">Amis</div><div class="xs muted">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · classement de la semaine' : 'Compare-toi à tes potes'}</div></div>${chev()}</button>`;
+  return `<button class="hl-card" data-a="open-friends"><span class="hl-ic">${I.users}</span><div class="grow"><div class="hl-t">Amis</div><div class="hl-s">${SBd.pseudo ? '@' + esc(SBd.pseudo) + ' · classement de la semaine' : 'Compare-toi à tes potes'}</div></div>${chev()}</button>`;
 }
 function viewFriends() {
   const bar = `<div class="topbar"><button class="icon-btn" data-a="back" aria-label="Retour">${I.back}</button><span class="title">Amis</span></div>`;
@@ -1352,6 +1394,7 @@ function renderFloat() {
   const a = S.active, t = top();
   const fr = $('#float-root');
   if (!a || !a.rest || !t || t.v !== 'workout') { fr.innerHTML = ''; return; }
+  if (fr.querySelector('.rest-bar')) { tick(); return; }
   fr.innerHTML = `<div class="rest-bar" role="timer" aria-label="Repos"><div class="rest-in"><div class="grow"><div class="row" style="gap:12px"><span class="rest-time num" id="rest-time">0:00</span><span class="eyebrow" id="rest-label">Repos</span></div><div class="rest-track"><i id="rest-fill"></i></div></div>
   <button class="btn sm" data-a="rest-add" data-d="-15">−15</button><button class="btn sm" data-a="rest-add" data-d="15">+15</button><button class="icon-btn" data-a="rest-stop" aria-label="Arrêter le repos">${I.x}</button></div></div>`;
   tick();
@@ -1630,7 +1673,7 @@ function viewProgress() {
   const totalVol = ws.reduce((a, w) => a + (w.volume || 0), 0), totalSets = ws.reduce((a, w) => a + (w.setCount || 0), 0), totalPR = ws.reduce((a, w) => a + (w.prs || []).length, 0);
   let h = `<div class="stack-lg"><div class="page-head"><h1>Progression</h1></div>`;
   if (ws.length) h += `<div class="stats4"><div><div class="stat-v num">${fmtVol(totalVol)}</div><div class="stat-l">Volume total</div></div><div><div class="stat-v num">${ws.length}</div><div class="stat-l">Séances</div></div><div><div class="stat-v num">${totalSets}</div><div class="stat-l">Séries</div></div><div><div class="stat-v num" style="color:var(--accent)">${totalPR}</div><div class="stat-l">Records personnels</div></div></div>`;
-  h += `<div class="list">${friendsCard()}${photosCard()}</div>`;
+  h += `<div class="stack" style="gap:10px">${photosCard()}${friendsCard()}</div>`;
   if (!rows.length && !q) {
     return h + `<div class="empty"><h3>Pas encore de données</h3><p class="muted small">Termine une séance : chaque exercice aura sa fiche avec tes records, ton historique complet et des graphiques sur 1, 3, 6 mois ou tout l'historique.</p></div></div>`;
   }
