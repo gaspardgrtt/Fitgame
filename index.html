@@ -505,9 +505,9 @@ details.more .chev{transition:transform .2s var(--ease)}
 :root[data-ui="dark"]{--ring-a:#FF8A8F;--ring-b:#E5484D}
 .rings3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:16px 2px 14px;border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:var(--shadow)}
 :root[data-ui="dark"] .rings3{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)),var(--surface)}
-.sring{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px;text-align:center;min-width:0}
+.sring{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 2px;text-align:center;min-width:0}
 .sring + .sring{border-left:1px solid var(--line)}
-.ring.sm{width:min(106px,100%);height:auto;aspect-ratio:1;margin-bottom:6px}
+.ring.sm{width:min(114px,100%);height:auto;aspect-ratio:1;margin-bottom:6px}
 .ring.sm .rg-halo{fill:var(--surface-2);stroke:none}
 :root[data-ui="dark"] .ring.sm .rg-halo{fill:rgba(255,255,255,.035)}
 .ring.sm .rg-bg{stroke:var(--surface-3);stroke-width:8}
@@ -517,9 +517,9 @@ details.more .chev{transition:transform .2s var(--ease)}
 .sring-l{font-size:14px;font-weight:700;color:var(--muted)}
 .sring-h{font-size:11.5px;color:var(--faint);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .rings4{grid-template-columns:repeat(4,minmax(0,1fr));padding:14px 0 12px}
-.rings4 .sring{padding:0 2px}
-.rings4 .ring.sm{width:min(88px,100%)}
-.rings4 .ring.sm b{font-size:clamp(14px,4.3vw,19px);padding:0 8px}
+.rings4 .sring{padding:0 1px}
+.rings4 .ring.sm{width:min(96px,100%)}
+.rings4 .ring.sm b{font-size:clamp(15px,4.6vw,20px);padding:0 6px}
 .rings4 .sring-l{font-size:13.5px}
 .rings4 .sring-h{font-size:11px}
 .hello-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px}
@@ -551,7 +551,7 @@ h1,h2,h3,.ex-name{letter-spacing:-.02em}
 .stat-v{font-size:clamp(18px,5.4vw,22px)}
 .wk-count b{font-size:34px}
 .ring b{font-size:30px}
-.ring.sm b{font-size:clamp(17px,5.2vw,22px)}
+.ring.sm b{font-size:clamp(18px,5.5vw,24px)}
 .mstats b{font-size:17px}
 .rec-v{font-size:17px}
 .rest-time{font-size:28px}
@@ -1009,8 +1009,8 @@ function weekStrip() {
 }
 let ringN = 0;
 function statRing(value, label, pct, hint, col) {
-  const C = 2 * Math.PI * 33, id = 'rg' + (++ringN), [ca, cb, glow] = col || ['#FF8A8F', '#D52D3B', 'rgba(213,45,59,.45)'], track = glow.replace(/,\s*[\d.]+\)$/, ',.22)');
-  return `<div class="sring"><div class="ring sm" role="img" aria-label="${esc(label)} : ${esc(String(value))}, ${esc(hint)}"><svg viewBox="0 0 100 100"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ca}"/><stop offset="1" stop-color="${cb}"/></linearGradient><filter id="${id}g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle class="rg-halo" cx="50" cy="50" r="47"/><circle class="rg-bg" cx="50" cy="50" r="33" stroke="${track}" style="stroke:${track}"/>${pct > 0 ? `<circle class="rg-fg" cx="50" cy="50" r="33" stroke="url(#${id}) ${cb}" filter="url(#${id}g)" style="stroke:${cb};stroke:url(#${id}) ${cb};filter:url(#${id}g)" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/>` : ''}</svg><b class="num">${value}</b></div><div class="sring-l">${label}</div><div class="sring-h num">${hint}</div></div>`;
+  const C = 2 * Math.PI * 39, id = 'rg' + (++ringN), [ca, cb, glow] = col || ['#FF8A8F', '#D52D3B', 'rgba(213,45,59,.45)'], track = glow.replace(/,\s*[\d.]+\)$/, ',.22)');
+  return `<div class="sring"><div class="ring sm" role="img" aria-label="${esc(label)} : ${esc(String(value))}, ${esc(hint)}"><svg viewBox="0 0 100 100"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ca}"/><stop offset="1" stop-color="${cb}"/></linearGradient><filter id="${id}g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle class="rg-halo" cx="50" cy="50" r="49"/><circle class="rg-bg" cx="50" cy="50" r="39" stroke="${track}" style="stroke:${track}"/>${pct > 0 ? `<circle class="rg-fg" cx="50" cy="50" r="39" stroke="url(#${id}) ${cb}" filter="url(#${id}g)" style="stroke:${cb};stroke:url(#${id}) ${cb};filter:url(#${id}g)" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/>` : ''}</svg><b class="num">${value}</b></div><div class="sring-l">${label}</div><div class="sring-h num">${hint}</div></div>`;
 }
 function weekRing(n, g) {
   const C = 2 * Math.PI * 36, pct = Math.min(1, n / (g || 1));
@@ -1319,7 +1319,7 @@ function viewTemplates() {
   const ts = S.templates.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.createdAt - b.createdAt);
   const open = ui.tplOpen || (ui.tplOpen = new Set());
   let h = `<div class="stack-lg"><div class="page-head"><h1>Mes séances</h1><button class="btn sm" data-a="open-lib">${I.book} Exercices</button></div>`;
-  h += `<div class="row"><button class="btn primary grow" data-a="new-tpl">${I.plus} Nouvelle séance</button><button class="btn" data-a="start-free">Séance libre</button></div>`;
+  h += `<div class="row"><button class="btn primary grow" data-a="new-tpl">${I.plus} Créer une séance</button><button class="btn" data-a="start-free">Séance libre</button></div>`;
   if (!ts.length) h += `<div class="empty"><h3>Aucune séance créée</h3><p class="muted small">Une séance est un modèle réutilisable : une liste d'exercices avec séries, répétitions visées et temps de repos. Exemples : Pectoraux / Triceps, Dos / Biceps, Jambes.</p></div>`;
   else h += `<section class="stack"><div class="section-head"><h2>Mes séances enregistrées</h2><span class="xs muted">${ts.length}</span></div>` + ts.map(t => {
     const sets = t.items.reduce((a, i) => a + (i.sets || 0), 0);
