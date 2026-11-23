@@ -1110,7 +1110,10 @@ function addPastWorkout(t, name, tid) {
   toast('Séance ajoutée au ' + fmtDate(t, { day: 'numeric', month: 'long' }));
 }
 function presetsBlock() {
-  return `<section class="stack"><div class="section-head"><h2>Séances prêtes</h2><span class="xs muted">Modifiables ensuite</span></div><div class="list">${PRESETS.map(p => `<div class="item"><div class="grow"><div style="font-weight:650;overflow-wrap:anywhere">${esc(p.name)}</div><div class="xs muted">${plural(p.items.length, 'exercice')} · ${plural(p.items.reduce((a, i) => a + i.sets, 0), 'série')}</div></div><button class="btn sm tint" data-a="preset-add" data-k="${p.key}">${I.plus} Ajouter</button></div>`).join('')}</div></section>`;
+  // Hide a ready-made session once the user already has it (same kind, with exercises)
+  const left = PRESETS.filter(p => !S.templates.some(t => t.items.length && (t.preset === p.key || PRESET_MATCH[p.key](slug(t.name)))));
+  if (!left.length) return '';
+  return `<section class="stack"><div class="section-head"><h2>Séances prêtes</h2><span class="xs muted">Modifiables ensuite</span></div><div class="list">${left.map(p => `<div class="item"><div class="grow"><div style="font-weight:650;overflow-wrap:anywhere">${esc(p.name)}</div><div class="xs muted">${plural(p.items.length, 'exercice')} · ${plural(p.items.reduce((a, i) => a + i.sets, 0), 'série')}</div></div><button class="btn sm tint" data-a="preset-add" data-k="${p.key}">${I.plus} Ajouter</button></div>`).join('')}</div></section>`;
 }
 /* ───────────── Photos de progression (stockées sur l’appareil) ───────────── */
 const PhotoDB = {
