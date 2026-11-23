@@ -683,7 +683,7 @@ const Store = {
   },
   libPayload() { return { presetsSeeded: !!S.presetsSeeded, presetsV: S.presetsV || 0, templates: S.templates, customExercises: S.customExercises, settings: S.settings, tombstones: (S.tombstones || []).slice(-500), updatedAt: S.libUpdatedAt }; },
   touchLib() {
-    S.libUpdatedAt = Date.now(); dirtyLib = true; this.saveLocal();
+    S.libUpdatedAt = Date.now(); dirtyLib = true; this.saveLocal(); sbSyncSoon(4000);
     if (!this.db) return;
     this.debounce('lib', () => this.chain('lib', () => this.retry(() => this.libRef().set(clone(this.libPayload()))).then(() => { if (this.mode === 'error') this.setMode('cloud'); })), 700);
   },
@@ -694,7 +694,7 @@ const Store = {
     if (immediate) { clearTimeout(this.timers.active); push(); } else this.debounce('active', push, 1200);
   },
   pushWorkout(w) {
-    this.saveLocal();
+    this.saveLocal(); sbSyncSoon();
     if (!this.db) return Promise.resolve();
     return this.chain('w:' + w.id, async () => {
       const body = clone(w); delete body._synced;
@@ -706,6 +706,7 @@ const Store = {
     S.tombstones = (S.tombstones || []).concat(id);
     this.touchLib();
     if (this.db) this.chain('w:' + id, () => this.retry(() => this.wCol().doc(id).delete()));
+    sbSyncSoon();
   },
   async resync() {
     if (this.busy) return;
@@ -1141,10 +1142,14 @@ async function sbSync() {
   const post = body => sbReq('/rest/v1/shared_stats?on_conflict=user_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body });
   const base = { user_id: SBd.ses.uid, updated_at: new Date().toISOString() }, ms = myStats(), pub = { avatar: ms.avatar, display_name: ms.display_name };
   delete ms.avatar;
-  try { await post(Object.assign(base, ms)); }
-  catch (e) { try { await post(Object.assign(base, { week_count: ms.week_count, week_goal: ms.week_goal, streak: ms.streak, total: ms.total, last_at: ms.last_at, last_name: ms.last_name })); } catch (e2) {} }
+  SBs.syncErr = '';
+  try { await post(Object.assign({}, base, ms)); }
+  catch (e) { try { await post(Object.assign({}, base, { week_count: ms.week_count, week_goal: ms.week_goal, streak: ms.streak, total: ms.total, last_at: ms.last_at, last_name: ms.last_name })); } catch (e2) { SBs.syncErr = e2.message || 'erreur réseau'; } }
+  SBd.lastSync = Date.now(); sbSave();
   try { await sbReq('/rest/v1/profiles?id=eq.' + SBd.ses.uid, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: pub }); } catch (e) {}
 }
+let sbSyncT = null;
+function sbSyncSoon(ms) { if (!SBd.ses || !SBd.pseudo) return; clearTimeout(sbSyncT); sbSyncT = setTimeout(() => { sbSync().catch(() => {}); }, ms == null ? 2500 : ms); }
 async function sbLoad() {
   SBs.friends = await sbReq('/rest/v1/friendships?select=id,status,requester,addressee,rq:profiles!friendships_requester_fkey(pseudo),ad:profiles!friendships_addressee_fkey(pseudo)') || [];
   SBs.stats = await sbReq('/rest/v1/shared_stats?select=*') || [];
@@ -1188,7 +1193,7 @@ function profileCard(b) {
   return `<div class="pcard">${avatarEl(b, 'pc-av')}<div class="pc-name">${esc(nm)}</div><div class="pc-sub">@${esc(b.pseudo)} · ${ic} ${lv}</div>
   <div class="pc-streak">${I.flame.replace('<svg', '<svg width="22" height="22"')}<b class="num">${n(st.streak)}</b><span>${n(st.streak) > 1 ? 'semaines' : 'semaine'}<br>de série</span></div>
   <div class="pc-grid">${cell(n(st.week_count) + '/' + (n(st.week_goal) || '–'), 'Cette semaine')}${cell(n(st.month_count), 'Ce mois-ci')}${cell(n(st.total), 'Séances')}${cell((n(st.volume_kg) / 1000).toFixed(1) + ' t', 'Soulevées')}</div>
-  ${row('Exercice favori', esc(st.fav_exercise || '–'))}${row('Dernière séance', st.last_at ? esc(relDay(new Date(st.last_at).getTime())) : '–')}${row('Depuis', esc(since))}</div>`;
+  ${!b.me && st.updated_at ? row('Stats mises à jour', esc(relDay(new Date(st.updated_at).getTime()))) : ''}${row('Exercice favori', esc(st.fav_exercise || '–'))}${row('Dernière séance', st.last_at ? esc(relDay(new Date(st.last_at).getTime())) : '–')}${row('Depuis', esc(since))}</div>`;
 }
 function profileEditor() {
   const p = S.settings.profile || {}, au = myStats(true), me = SBboard.find(b => b.me) || { pseudo: SBd.pseudo, st: myStats() };
@@ -1213,7 +1218,9 @@ function viewFriends() {
   if (!SBd.pseudo) return wrap(card(`<h3>Choisis ton pseudo</h3><p class="muted small">C’est ce que tes amis chercheront. 3 à 20 caractères : lettres minuscules, chiffres, _</p><input class="input" id="sb-pseudo" placeholder="ex : gaspard17" autocapitalize="off" autocomplete="off" maxlength="20"><button class="btn primary block" data-a="fr-pseudo">Valider</button>`));
   const me = SBd.ses.uid, fr = SBs.friends, oth = f => f.requester === me ? f.ad : f.rq, othId = f => f.requester === me ? f.addressee : f.requester;
   const acc = fr.filter(f => f.status === 'accepted'), inc = fr.filter(f => f.status === 'pending' && f.addressee === me), out = fr.filter(f => f.status === 'pending' && f.requester === me);
-  const board = [{ pseudo: SBd.pseudo, me: true, st: myStats() }].concat(acc.map(f => ({ f, pseudo: (oth(f) || {}).pseudo || '?', st: (x => x ? Object.assign({}, x, (p => { const o = {}; if (p && p.avatar) o.avatar = p.avatar; if (p && p.display_name) o.display_name = p.display_name; return o; })(SBs.prof[othId(f)])) : null)(SBs.stats.find(x => x.user_id === othId(f))) })));
+  const board = [{ pseudo: SBd.pseudo, me: true, st: Object.assign(myStats(), { updated_at: new Date().toISOString() }) }].concat(acc.map(f => ({ f, pseudo: (oth(f) || {}).pseudo || '?', st: (x => x ? Object.assign({}, x, (p => { const o = {}; if (p && p.avatar) o.avatar = p.avatar; if (p && p.display_name) o.display_name = p.display_name; return o; })(SBs.prof[othId(f)])) : null)(SBs.stats.find(x => x.user_id === othId(f))) })));
+  const wk0 = startOfWeek(Date.now()), mo0 = (() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d.getTime(); })();
+  board.forEach(b => { if (b.me || !b.st) return; const u = b.st.updated_at ? new Date(b.st.updated_at).getTime() : 0; b.st = Object.assign({}, b.st, { _upd: u }); if (u < wk0) b.st.week_count = 0; if (u < mo0) b.st.month_count = 0; if (u < prevWeek(wk0)) b.st.streak = 0; });
   const mode = ui.frRank || 'week', num = v => Number(v) || 0, S_ = b => b.st || {};
   const val = b => num(mode === 'week' ? S_(b).week_count : mode === 'month' ? S_(b).month_count : S_(b).total);
   board.sort((a, b) => val(b) - val(a) || num(S_(b).streak) - num(S_(a).streak));
@@ -1230,12 +1237,14 @@ function viewFriends() {
     const unit = mode === 'week' ? 'cette sem.' : mode === 'month' ? 'ce mois' : 'au total';
     h += `<section class="stack"><div class="section-head"><h2>Classement</h2><span class="xs muted">${plural(board.length, 'participant')}</span></div><div class="seg" role="group" aria-label="Période">${[['week', 'Semaine'], ['month', 'Mois'], ['total', 'Total']].map(([k, l]) => `<button class="${mode === k ? 'on' : ''}" data-a="fr-rank" data-k="${k}">${l}</button>`).join('')}</div>
     <div class="list">${board.map((b, i) => { const st = S_(b), w = when(b), today = w && startOfDay(w) === t0, goal = num(st.week_goal) || 3;
-      return `<div class="item fr-row${b.me ? ' me' : ''}" data-a="fr-card" data-i="${i}" role="button" tabindex="0" aria-label="Profil de ${esc(nameOf(b))}"><span class="rk ${i < 3 ? 'top' : ''}">${i + 1}</span>${avatarEl(b)}<div class="grow" style="min-width:0"><div class="fr-n">${esc(nameOf(b))}${b.me ? ' <span class="xs muted">(toi)</span>' : ''}</div><div class="xs muted">@${esc(b.pseudo)}${num(st.streak) ? ' · série ' + num(st.streak) + ' sem.' : ''} · ${today ? '<span class="dot"></span>aujourd’hui' : w ? esc(relDay(w).toLowerCase()) : 'aucune séance'}</div>${mode === 'week' ? `<div class="mini"><i style="width:${Math.min(100, num(st.week_count) / goal * 100)}%"></i></div>` : ''}</div><div class="fr-v"><b class="num">${mode === 'week' ? val(b) + '<small style="font-size:14px;color:var(--muted)">/' + goal + '</small>' : val(b)}</b><span>${unit}</span></div>${chev()}</div>`; }).join('')}</div></section>`;
+      return `<div class="item fr-row${b.me ? ' me' : ''}" data-a="fr-card" data-i="${i}" role="button" tabindex="0" aria-label="Profil de ${esc(nameOf(b))}"><span class="rk ${i < 3 ? 'top' : ''}">${i + 1}</span>${avatarEl(b)}<div class="grow" style="min-width:0"><div class="fr-n">${esc(nameOf(b))}${b.me ? ' <span class="xs muted">(toi)</span>' : ''}</div><div class="xs muted">@${esc(b.pseudo)}${num(st.streak) ? ' · série ' + num(st.streak) + ' sem.' : ''} · ${today ? '<span class="dot"></span>aujourd’hui' : w ? esc(relDay(w).toLowerCase()) : 'aucune séance'}${!b.me && st._upd && Date.now() - st._upd > 2 * DAY ? ` · <span title="Ses stats n'ont pas été mises à jour depuis">stats du ${esc(fmtDate(st._upd, { day: 'numeric', month: 'short' }))}</span>` : ''}</div>${mode === 'week' ? `<div class="mini"><i style="width:${Math.min(100, num(st.week_count) / goal * 100)}%"></i></div>` : ''}</div><div class="fr-v"><b class="num">${mode === 'week' ? val(b) + '<small style="font-size:14px;color:var(--muted)">/' + goal + '</small>' : val(b)}</b><span>${unit}</span></div>${chev()}</div>`; }).join('')}</div></section>`;
     const act = board.filter(b => !b.me && when(b)).sort((a, b) => when(b) - when(a)).slice(0, 5);
     if (act.length) h += `<section class="stack"><div class="section-head"><h2>Activité récente</h2></div><div class="list">${act.map(b => `<div class="item" data-a="fr-card" data-i="${board.indexOf(b)}" role="button" tabindex="0" style="cursor:pointer">${avatarEl(b)}<div class="grow" style="min-width:0"><div style="font-weight:650;overflow-wrap:anywhere">${esc(nameOf(b))}</div><div class="xs muted">${esc(S_(b).last_name || 'Séance')} · ${esc(relDay(when(b)).toLowerCase())}</div></div><span class="xs muted">${num(S_(b).week_count)} cette sem.</span></div>`).join('')}</div></section>`;
   } else h += `<section class="card stack" style="text-align:center;align-items:center"><span class="ic-dot">${I.users}</span><h3>Entraîne-toi avec tes potes</h3><p class="muted small">Ajoute un ami avec son pseudo ou envoie-lui ton lien : vous verrez qui s’entraîne, la série de chacun et un classement de la semaine.</p><button class="btn primary block" data-a="fr-share">Inviter par lien</button></section>`;
   h += card(`<h3>Ajouter un ami</h3><div class="row"><input class="input grow" id="sb-friend" placeholder="Son pseudo" autocapitalize="off" autocomplete="off" maxlength="21" enterkeyhint="send"><button class="btn primary" data-a="fr-add">Ajouter</button></div><button class="btn sm ghost" data-a="fr-share" style="align-self:flex-start;color:var(--accent);padding:0 4px">${I.copy} Inviter par lien</button>${out.length ? `<div class="row wrap xs muted" style="gap:6px">En attente : ${out.map(f => `<button class="chip" data-a="fr-del" data-id="${f.id}" data-t="Annuler la demande ?">@${esc((f.ad || {}).pseudo || '?')} ✕</button>`).join('')}</div>` : ''}`);
   if (SBs.err) h += `<p class="small" style="color:var(--down)">${esc(SBs.err)}</p>`;
+  if (SBs.syncErr) h += `<p class="small" style="color:var(--down)">Tes stats n'ont pas pu être partagées avec tes amis (${esc(SBs.syncErr)}). Nouvel essai automatique à la prochaine ouverture.</p>`;
+  h += `<p class="xs muted">Les chiffres de tes amis sont ceux envoyés par leur téléphone lors de leur dernière ouverture de l'app.</p>`;
   h += `<button class="btn ghost block" data-a="fr-logout">Se déconnecter</button>`;
   return wrap(h);
 }
@@ -1432,7 +1441,7 @@ function startRest(sec) {
 }
 let wl = null;
 async function wakeLock() { try { if (navigator.wakeLock && !wl) { wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => wl = null); } } catch (e) {} }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (S.active) wakeLock(); if (Store.mode === 'error') Store.resync(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (SBd.lastSync || 0) > 120000) sbSyncSoon(800); if (document.visibilityState === 'visible') { if (S.active) wakeLock(); if (Store.mode === 'error') Store.resync(); } });
 window.addEventListener('online', () => Store.resync());
 setInterval(() => { if (Store.mode === 'error' && navigator.onLine !== false) Store.resync(); }, 30000);
 
@@ -2248,6 +2257,7 @@ Store.connect().finally(() => {
     S.presetsV = 4; Store.touchLib();
   }
   render();
+  sbSyncSoon(1000);
 });
 window.__fonte = { get S() { return S; }, A, render, PRESETS }; // debug hook
 })();
