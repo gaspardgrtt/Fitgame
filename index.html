@@ -1048,13 +1048,14 @@ function viewHome() {
 
   h += S.active ? `<button class="btn primary lg block" data-a="resume">${I.play} Reprendre la séance</button>` : `<button class="btn primary lg block" data-a="start-pick">${I.play} Commencer une séance</button>`;
 
-  const w0 = startOfWeek(now), pw0 = prevWeek(w0);
+  // Rings: last 7 days compared with the 7 days before (never empty on a Monday)
+  const d7 = now - 7 * DAY, d14 = now - 14 * DAY;
   const inW = (a, b) => ws.filter(w => w.endedAt >= a && w.endedAt < b);
-  const tw = inW(w0, Infinity), lw = inW(pw0, w0);
+  const tw = inW(d7, Infinity), lw = inW(d14, d7);
   const sum = (arr, f) => arr.reduce((a, w) => a + (f(w) || 0), 0);
   const twVol = sum(tw, w => w.volume), lwVol = sum(lw, w => w.volume), twSets = sum(tw, w => w.setCount), lwSets = sum(lw, w => w.setCount);
   const ratio = (a, b) => b ? Math.min(1, a / b) : (a ? 1 : 0);
-  h += `<div class="rings3">${statRing(ws.length, 'Séances', ratio(k.cur, k.g), `${k.cur}/${k.g} cette sem.`, ['#FF7A96', '#FF2D55', 'rgba(255,45,85,.75)'])}${statRing(fmtVol(totalVol), 'Volume', ratio(twVol, lwVol), `${twVol >= 1000 ? (twVol / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' t' : Math.round(twVol) + ' kg'} cette sem.`, ['#FFE14D', '#FF7A00', 'rgba(255,140,0,.75)'])}${statRing(ws.reduce((a, w) => a + (w.setCount || 0), 0), 'Séries', ratio(twSets, lwSets), `${twSets} cette sem.`, ['#FF8BF5', '#D21BFF', 'rgba(210,27,255,.75)'])}</div>`;
+  h += `<div class="rings3">${statRing(ws.length, 'Séances', ratio(tw.length, k.g), `${tw.length}/${k.g} sur 7 j`, ['#FF7A96', '#FF2D55', 'rgba(255,45,85,.75)'])}${statRing(fmtVol(totalVol), 'Volume', ratio(twVol, lwVol), `${twVol >= 1000 ? (twVol / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' t' : Math.round(twVol) + ' kg'} sur 7 j`, ['#FFE14D', '#FF7A00', 'rgba(255,140,0,.75)'])}${statRing(ws.reduce((a, w) => a + (w.setCount || 0), 0), 'Séries', ratio(twSets, lwSets), `${twSets} sur 7 j`, ['#FF8BF5', '#D21BFF', 'rgba(210,27,255,.75)'])}</div>`;
 
   if (last) {
     const st = workoutStats(last);
