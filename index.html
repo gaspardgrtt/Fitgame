@@ -512,7 +512,7 @@ details.more .chev{transition:transform .2s var(--ease)}
 :root[data-ui="dark"] .ring.sm .rg-halo{fill:rgba(255,255,255,.035)}
 .ring.sm .rg-bg{stroke:var(--surface-3);stroke-width:8}
 :root[data-ui="dark"] .ring.sm .rg-bg{stroke:rgba(255,255,255,.08)}
-.ring.sm .rg-fg{stroke-width:8;filter:drop-shadow(0 2px 4px rgba(213,45,59,.35))}
+.ring.sm .rg-fg{stroke-width:8}
 .ring.sm b{font-size:clamp(17px,5.2vw,23px);padding:0 14px;overflow-wrap:anywhere;line-height:1}
 .sring-l{font-size:14px;font-weight:700;color:var(--muted)}
 .sring-h{font-size:11.5px;color:var(--faint);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -1002,9 +1002,9 @@ function weekStrip() {
   }).join('')}</div>`;
 }
 let ringN = 0;
-function statRing(value, label, pct, hint) {
-  const C = 2 * Math.PI * 33, id = 'rg' + (++ringN);
-  return `<div class="sring"><div class="ring sm" role="img" aria-label="${esc(label)} : ${esc(String(value))}, ${esc(hint)}"><svg viewBox="0 0 100 100"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--ring-a)"/><stop offset="1" stop-color="var(--ring-b)"/></linearGradient></defs><circle class="rg-halo" cx="50" cy="50" r="47"/><circle class="rg-bg" cx="50" cy="50" r="33"/><circle class="rg-fg" cx="50" cy="50" r="33" style="stroke:url(#${id})" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg><b class="num">${value}</b></div><div class="sring-l">${label}</div><div class="sring-h num">${hint}</div></div>`;
+function statRing(value, label, pct, hint, col) {
+  const C = 2 * Math.PI * 33, id = 'rg' + (++ringN), [ca, cb, glow] = col || ['#FF8A8F', '#D52D3B', 'rgba(213,45,59,.45)'];
+  return `<div class="sring"><div class="ring sm" role="img" aria-label="${esc(label)} : ${esc(String(value))}, ${esc(hint)}"><svg viewBox="0 0 100 100"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ca}"/><stop offset="1" stop-color="${cb}"/></linearGradient></defs><circle class="rg-halo" cx="50" cy="50" r="47"/><circle class="rg-bg" cx="50" cy="50" r="33"/><circle class="rg-fg" cx="50" cy="50" r="33" stroke="url(#${id})" style="stroke:url(#${id});filter:drop-shadow(0 2px 5px ${glow})" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg><b class="num">${value}</b></div><div class="sring-l">${label}</div><div class="sring-h num">${hint}</div></div>`;
 }
 function weekRing(n, g) {
   const C = 2 * Math.PI * 36, pct = Math.min(1, n / (g || 1));
@@ -1049,7 +1049,7 @@ function viewHome() {
   const sum = (arr, f) => arr.reduce((a, w) => a + (f(w) || 0), 0);
   const twVol = sum(tw, w => w.volume), lwVol = sum(lw, w => w.volume), twSets = sum(tw, w => w.setCount), lwSets = sum(lw, w => w.setCount);
   const ratio = (a, b) => b ? Math.min(1, a / b) : (a ? 1 : 0);
-  h += `<div class="rings3">${statRing(ws.length, 'Séances', ratio(k.cur, k.g), `${k.cur}/${k.g} cette sem.`)}${statRing(fmtVol(totalVol), 'Volume', ratio(twVol, lwVol), `${twVol >= 1000 ? (twVol / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' t' : Math.round(twVol) + ' kg'} cette sem.`)}${statRing(ws.reduce((a, w) => a + (w.setCount || 0), 0), 'Séries', ratio(twSets, lwSets), `${twSets} cette sem.`)}</div>`;
+  h += `<div class="rings3">${statRing(ws.length, 'Séances', ratio(k.cur, k.g), `${k.cur}/${k.g} cette sem.`, ['#FF7A80', '#D52D3B', 'rgba(213,45,59,.5)'])}${statRing(fmtVol(totalVol), 'Volume', ratio(twVol, lwVol), `${twVol >= 1000 ? (twVol / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' t' : Math.round(twVol) + ' kg'} cette sem.`, ['#FFC46B', '#F26B2E', 'rgba(242,107,46,.5)'])}${statRing(ws.reduce((a, w) => a + (w.setCount || 0), 0), 'Séries', ratio(twSets, lwSets), `${twSets} cette sem.`, ['#FF9EC4', '#D9367A', 'rgba(217,54,122,.5)'])}</div>`;
 
   if (last) {
     const st = workoutStats(last);
