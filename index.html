@@ -1022,7 +1022,6 @@ function viewHome() {
   const last = ws.find(w => w.duration) || ws[0];
   const hour = new Date().getHours();
   const hello = hour < 5 ? 'Bonne nuit' : hour < 18 ? 'Bonjour' : 'Bonsoir';
-  const recentPR = recentRecords(ws, 3);
   const totalVol = ws.reduce((a, w) => a + (w.volume || 0), 0);
   const k = weekStreak();
 
@@ -1059,9 +1058,6 @@ function viewHome() {
     </button></section>`;
   }
 
-  if (recentPR.length) {
-    h += `<section class="stack"><div class="section-head"><h2>Records récents</h2><button class="link" data-a="see-records">Voir tous les records</button></div><div class="list">${recentPR.map(p => `<button class="item" data-a="open-ex" data-id="${p.exId}"><span class="ic-dot">${I.trophy}</span><div class="grow"><div style="font-weight:650;overflow-wrap:anywhere">${esc(exName(p.exId, p.name))}</div><div class="xs muted">${esc(p.label)} · ${relDay(p.t)}</div></div><span class="rec-v num">${esc(p.value)}</span></button>`).join('')}</div></section>`;
-  }
 
   if (!ws.length && !S.templates.length) {
     h += `<div class="empty"><div class="plate">20</div><h2>Ton carnet est vide</h2><p class="muted small">Crée ta première séance (par exemple Pectoraux / Triceps), ajoute tes exercices depuis la bibliothèque, puis lance-la à la salle. Tes charges et tes records apparaîtront ici.</p><div class="row wrap"><button class="btn primary" data-a="new-tpl">${I.plus} Créer une séance</button><button class="btn" data-a="start-free">Séance libre</button></div></div>`;
