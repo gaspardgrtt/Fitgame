@@ -1009,8 +1009,8 @@ function weekStrip() {
 }
 let ringN = 0;
 function statRing(value, label, pct, hint, col) {
-  const C = 2 * Math.PI * 33, id = 'rg' + (++ringN), [ca, cb, glow] = col || ['#FF8A8F', '#D52D3B', 'rgba(213,45,59,.45)'], track = glow.replace(/,\s*[\d.]+\)$/, ',.34)');
-  return `<div class="sring"><div class="ring sm" role="img" aria-label="${esc(label)} : ${esc(String(value))}, ${esc(hint)}"><svg viewBox="0 0 100 100"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ca}"/><stop offset="1" stop-color="${cb}"/></linearGradient></defs><circle class="rg-halo" cx="50" cy="50" r="47"/><circle class="rg-bg" cx="50" cy="50" r="33" stroke="${track}" style="stroke:${track}"/>${pct > 0 ? `<circle class="rg-fg" cx="50" cy="50" r="33" stroke="url(#${id}) ${cb}" style="stroke:${cb};stroke:url(#${id}) ${cb}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/>` : ''}</svg><b class="num">${value}</b></div><div class="sring-l">${label}</div><div class="sring-h num">${hint}</div></div>`;
+  const C = 2 * Math.PI * 33, id = 'rg' + (++ringN), [ca, cb, glow] = col || ['#FF8A8F', '#D52D3B', 'rgba(213,45,59,.45)'], track = glow.replace(/,\s*[\d.]+\)$/, ',.22)');
+  return `<div class="sring"><div class="ring sm" role="img" aria-label="${esc(label)} : ${esc(String(value))}, ${esc(hint)}"><svg viewBox="0 0 100 100"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ca}"/><stop offset="1" stop-color="${cb}"/></linearGradient><filter id="${id}g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle class="rg-halo" cx="50" cy="50" r="47"/><circle class="rg-bg" cx="50" cy="50" r="33" stroke="${track}" style="stroke:${track}"/>${pct > 0 ? `<circle class="rg-fg" cx="50" cy="50" r="33" stroke="url(#${id}) ${cb}" filter="url(#${id}g)" style="stroke:${cb};stroke:url(#${id}) ${cb};filter:url(#${id}g)" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/>` : ''}</svg><b class="num">${value}</b></div><div class="sring-l">${label}</div><div class="sring-h num">${hint}</div></div>`;
 }
 function weekRing(n, g) {
   const C = 2 * Math.PI * 36, pct = Math.min(1, n / (g || 1));
@@ -1054,7 +1054,7 @@ function viewHome() {
   const sum = (arr, f) => arr.reduce((a, w) => a + (f(w) || 0), 0);
   const twVol = sum(tw, w => w.volume), lwVol = sum(lw, w => w.volume), twSets = sum(tw, w => w.setCount), lwSets = sum(lw, w => w.setCount);
   const ratio = (a, b) => b ? Math.min(1, a / b) : (a ? 1 : 0);
-  h += `<div class="rings3">${statRing(ws.length, 'Séances', ratio(k.cur, k.g), `${k.cur}/${k.g} cette sem.`, ['#FF7A80', '#D52D3B', 'rgba(213,45,59,.5)'])}${statRing(fmtVol(totalVol), 'Volume', ratio(twVol, lwVol), `${twVol >= 1000 ? (twVol / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' t' : Math.round(twVol) + ' kg'} cette sem.`, ['#FFC46B', '#F26B2E', 'rgba(242,107,46,.5)'])}${statRing(ws.reduce((a, w) => a + (w.setCount || 0), 0), 'Séries', ratio(twSets, lwSets), `${twSets} cette sem.`, ['#FF9EC4', '#D9367A', 'rgba(217,54,122,.5)'])}</div>`;
+  h += `<div class="rings3">${statRing(ws.length, 'Séances', ratio(k.cur, k.g), `${k.cur}/${k.g} cette sem.`, ['#FF7A96', '#FF2D55', 'rgba(255,45,85,.75)'])}${statRing(fmtVol(totalVol), 'Volume', ratio(twVol, lwVol), `${twVol >= 1000 ? (twVol / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' t' : Math.round(twVol) + ' kg'} cette sem.`, ['#FFE14D', '#FF7A00', 'rgba(255,140,0,.75)'])}${statRing(ws.reduce((a, w) => a + (w.setCount || 0), 0), 'Séries', ratio(twSets, lwSets), `${twSets} cette sem.`, ['#FF8BF5', '#D21BFF', 'rgba(210,27,255,.75)'])}</div>`;
 
   if (last) {
     const st = workoutStats(last);
@@ -1747,7 +1747,7 @@ function viewProgress() {
     const nw = new Date(), M = monthStats(nw.getFullYear(), nw.getMonth()), P = monthStats(nw.getFullYear(), nw.getMonth() - 1);
     const ratio = (a, b) => b ? Math.min(1, a / b) : (a ? 1 : 0);
     const shortVol = v => v >= 1000 ? (v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' t' : Math.round(v) + ' kg';
-    h += `<div class="rings3 rings4">${statRing(fmtVol(totalVol), 'Volume', ratio(M.vol, P.vol), `${shortVol(M.vol)} ce mois`, ['#FFC46B', '#F26B2E', 'rgba(242,107,46,.5)'])}${statRing(ws.length, 'Séances', ratio(M.n, P.n), `${M.n} ce mois`, ['#FF7A80', '#D52D3B', 'rgba(213,45,59,.5)'])}${statRing(totalSets, 'Séries', ratio(M.sets, P.sets), `${M.sets} ce mois`, ['#FF9EC4', '#D9367A', 'rgba(217,54,122,.5)'])}${statRing(totalPR, 'Records', ratio(M.prs, P.prs), `${M.prs} ce mois`, ['#FFE08A', '#E0A21B', 'rgba(224,162,27,.5)'])}</div>`;
+    h += `<div class="rings3 rings4">${statRing(fmtVol(totalVol), 'Volume', ratio(M.vol, P.vol), `${shortVol(M.vol)} ce mois`, ['#FFE14D', '#FF7A00', 'rgba(255,140,0,.75)'])}${statRing(ws.length, 'Séances', ratio(M.n, P.n), `${M.n} ce mois`, ['#FF7A96', '#FF2D55', 'rgba(255,45,85,.75)'])}${statRing(totalSets, 'Séries', ratio(M.sets, P.sets), `${M.sets} ce mois`, ['#FF8BF5', '#D21BFF', 'rgba(210,27,255,.75)'])}${statRing(totalPR, 'Records', ratio(M.prs, P.prs), `${M.prs} ce mois`, ['#F6FF6B', '#B8F000', 'rgba(184,240,0,.75)'])}</div>`;
   }
   h += `<div class="stack" style="gap:10px">${photosCard()}${friendsCard()}</div>`;
   if (!rows.length && !q) {
