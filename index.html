@@ -521,6 +521,14 @@ button.card[data-a="open-photos"],button.card[data-a="open-friends"]{gap:12px}
 .mini{height:5px;border-radius:99px;background:rgba(128,128,128,.25);margin-top:6px;overflow:hidden}
 .mini i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF6468,#E5484D)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ADE80;margin-right:6px;box-shadow:0 0 8px #4ADE80}
+.pr-list{position:relative}
+.pr-list::after{content:"";position:absolute;inset:0;background:radial-gradient(55% 90% at 88% 45%,rgba(229,72,77,.28),transparent 72%);pointer-events:none}
+.pr-list > .pr-art{height:100%;right:0;opacity:.95}
+.pr-list .pr-row{min-height:76px}
+.pr-list .pr-row + .pr-row{border-top:1px solid rgba(255,255,255,.09)}
+.pr-list .pr-row .btn{height:34px;padding:0 14px;font-size:13.5px}
+.tpl h2{font-family:var(--font-body);font-size:17px;font-weight:700;letter-spacing:0}
+.pr-row .grow > div:first-child{font-size:16px}
 .pr-row{position:relative;overflow:hidden;min-height:68px}
 .pr-row > :not(.pr-art){position:relative;z-index:1}
 .pr-art{position:absolute;right:0;top:0;height:100%;width:auto;aspect-ratio:1;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 40%);mask-image:linear-gradient(90deg,transparent,#000 40%)}
@@ -554,7 +562,9 @@ button.card[data-a="open-photos"],button.card[data-a="open-friends"]{gap:12px}
 
 /* ───── Ajustements mobile ───── */
 :root{padding:0!important}
-html,body{width:100%;min-height:100dvh;background-color:#070708}
+html,body{width:100%;height:auto;min-height:100dvh;overflow:visible;overscroll-behavior-y:none;background-color:#070708}
+#app{position:relative;inset:auto;min-height:100dvh;overflow:visible}
+body:has(#modal-root > *){overflow:hidden}
 :root[data-ui="light"],:root[data-ui="light"] body{background-color:var(--bg)}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .topbar,.wk-head{top:0;margin-top:calc(-1 * max(12px,env(safe-area-inset-top,0px)));padding-top:calc(max(12px,env(safe-area-inset-top,0px)) + 6px)}
@@ -948,8 +958,8 @@ function applyTheme() {
   const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = dark ? '#0E0F11' : '#ECEEF1';
 }
 if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { if (S.settings.theme === 'auto') applyTheme(); });
-function appScroll(y) { const a = document.getElementById('app'); if (a) a.scrollTop = y || 0; }
-function appY() { const a = document.getElementById('app'); return a ? a.scrollTop : 0; }
+function appScroll(y) { window.scrollTo(0, y || 0); }
+function appY() { return window.scrollY || document.documentElement.scrollTop || 0; }
 // Hide the floating bar while the keyboard is open (it would otherwise ride up above it)
 document.addEventListener('focusin', e => { const t = e.target; if (t && t.matches && t.matches('input:not([type=checkbox]):not([type=file]),textarea,select')) document.body.classList.add('kb'); });
 document.addEventListener('focusout', () => setTimeout(() => { const t = document.activeElement; if (!(t && t.matches && t.matches('input,textarea,select'))) document.body.classList.remove('kb'); }, 60));
@@ -1092,8 +1102,8 @@ function addPastWorkout(t, name, tid) {
   S.workouts.push(w); Store.pushWorkout(w); closeModal(); const y = appY(); render(); appScroll(y);
   toast('Séance ajoutée au ' + fmtDate(t, { day: 'numeric', month: 'long' }));
 }
-function presetArt(p) {
-  const n = p.name.toLowerCase(), on = n.includes('biceps') ? ['bi', 'abs'] : n.includes('pec') ? ['pec', 'tri'] : ['del', 'trap'];
+function presetArt(p, flat) {
+  const n = p.name.toLowerCase(), on = flat ? [] : n.includes('biceps') ? ['bi', 'abs'] : n.includes('pec') ? ['pec', 'tri'] : ['del', 'trap'];
   const c = id => on.includes(id) ? 'm hot' : 'm';
   const abs = [64, 76, 88].map(y => `<rect class="${c('abs')}" x="47" y="${y}" width="11" height="9" rx="3"/><rect class="${c('abs')}" x="62" y="${y}" width="11" height="9" rx="3"/>`).join('');
   return `<svg class="pr-art" viewBox="0 0 120 120" aria-hidden="true"><path class="body" d="M60 6c7 0 11 4 11 10v5c13 3 27 8 35 19 6 9 7 27 4 47h-9c0-12-2-22-6-28l-1 36c-3 6-9 9-16 9H42c-7 0-13-3-16-9l-1-36c-4 6-6 16-6 28H10c-3-20-2-38 4-47 8-11 22-16 35-19v-5c0-6 4-10 11-10z"/>
@@ -1104,7 +1114,7 @@ function presetArt(p) {
   <ellipse class="${c('tri')}" cx="12" cy="66" rx="4.5" ry="13"/><ellipse class="${c('tri')}" cx="108" cy="66" rx="4.5" ry="13"/>${abs}</svg>`;
 }
 function presetsBlock() {
-  return `<section class="stack"><div class="section-head"><h2>Séances prêtes</h2><span class="xs muted">Modifiables ensuite</span></div><div class="list">${PRESETS.map(p => `<div class="item pr-row">${presetArt(p)}<div class="grow"><div style="font-weight:650;overflow-wrap:anywhere">${esc(p.name)}</div><div class="xs muted">${plural(p.items.length, 'exercice')} · ${plural(p.items.reduce((a, i) => a + i.sets, 0), 'série')}</div></div><button class="btn sm primary" data-a="preset-add" data-k="${p.key}">${I.plus} Ajouter</button></div>`).join('')}</div></section>`;
+  return `<section class="stack"><div class="section-head"><h2>Séances prêtes</h2><span class="xs muted">Modifiables ensuite</span></div><div class="list pr-list">${presetArt({ name: '' }, true)}${PRESETS.map(p => `<div class="item pr-row"><div class="grow"><div style="font-weight:650;overflow-wrap:anywhere">${esc(p.name)}</div><div class="xs muted">${plural(p.items.length, 'exercice')} · ${plural(p.items.reduce((a, i) => a + i.sets, 0), 'série')}</div></div><button class="btn sm primary" data-a="preset-add" data-k="${p.key}">${I.plus} Ajouter</button></div>`).join('')}</div></section>`;
 }
 function homeProgress(ws) {
   const w0 = startOfWeek(Date.now());
@@ -1328,7 +1338,7 @@ function viewTemplates() {
       <button class="icon-btn sm" data-a="tpl-menu" data-id="${t.id}" aria-label="Options">${I.dots}</button></div>
       ${names.length ? `<p class="exlist">${names.map(esc).join(' · ')}</p>` : `<p class="exlist faint">Aucun exercice. Ouvre la séance pour en ajouter.</p>`}
       ${t.notes ? `<p class="small muted" style="font-style:italic;overflow-wrap:anywhere">${esc(t.notes)}</p>` : ''}
-      <div class="row"><button class="btn primary grow" data-a="start" data-id="${t.id}" ${t.items.length ? '' : 'disabled'}>${I.play} Commencer</button><button class="btn" data-a="edit-tpl" data-id="${t.id}">${I.edit} Modifier</button></div></article>`;
+      <div class="row"><button class="btn primary grow" data-a="${t.items.length ? 'start' : 'edit-tpl'}" data-id="${t.id}">${I.play} Commencer</button><button class="btn" data-a="edit-tpl" data-id="${t.id}">${I.edit} Modifier</button></div></article>`;
   }).join('') + `</div></div>`;
   return h;
 }
