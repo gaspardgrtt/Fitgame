@@ -1143,8 +1143,17 @@ async function sbSync() {
   const base = { user_id: SBd.ses.uid, updated_at: new Date().toISOString() }, ms = myStats(), pub = { avatar: ms.avatar, display_name: ms.display_name };
   delete ms.avatar;
   SBs.syncErr = '';
-  try { await post(Object.assign({}, base, ms)); }
-  catch (e) { try { await post(Object.assign({}, base, { week_count: ms.week_count, week_goal: ms.week_goal, streak: ms.streak, total: ms.total, last_at: ms.last_at, last_name: ms.last_name })); } catch (e2) { SBs.syncErr = e2.message || 'erreur réseau'; } }
+  // Try the full summary, then drop optional text fields one group at a time so the counters
+  // (week / month / total / streak) always get through even if one profile field is rejected.
+  const pick = keys => Object.fromEntries(keys.filter(k => k in ms).map(k => [k, ms[k]]));
+  const counters = ['week_count', 'week_goal', 'month_count', 'streak', 'best_streak', 'total', 'volume_kg', 'last_at', 'first_at'];
+  const tries = [ms, pick(counters.concat(['last_name', 'display_name'])), pick(counters.concat(['last_name'])), pick(counters), pick(['week_count', 'week_goal', 'streak', 'total', 'last_at', 'last_name'])];
+  let firstErr = null;
+  for (const body of tries) {
+    try { await post(Object.assign({}, base, body)); if (firstErr) console.warn('stats partagées sans certains champs :', firstErr); firstErr = null; break; }
+    catch (e) { firstErr = firstErr || e; SBs.syncErr = e.message || 'erreur réseau'; }
+  }
+  if (!firstErr) SBs.syncErr = '';
   SBd.lastSync = Date.now(); sbSave();
   try { await sbReq('/rest/v1/profiles?id=eq.' + SBd.ses.uid, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: pub }); } catch (e) {}
 }
