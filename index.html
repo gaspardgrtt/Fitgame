@@ -521,6 +521,14 @@ button.card[data-a="open-photos"],button.card[data-a="open-friends"]{gap:12px}
 .mini{height:5px;border-radius:99px;background:rgba(128,128,128,.25);margin-top:6px;overflow:hidden}
 .mini i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF6468,#E5484D)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ADE80;margin-right:6px;box-shadow:0 0 8px #4ADE80}
+.pr-row{position:relative;overflow:hidden;min-height:68px}
+.pr-row > :not(.pr-art){position:relative;z-index:1}
+.pr-art{position:absolute;right:0;top:0;height:100%;width:auto;aspect-ratio:1;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 40%);mask-image:linear-gradient(90deg,transparent,#000 40%)}
+.pr-art .body{fill:#26262b}
+.pr-art .m{fill:#34343a;stroke:rgba(255,255,255,.1);stroke-width:.8}
+.pr-art .m.hot{fill:#E5484D;stroke:rgba(255,190,190,.5);filter:drop-shadow(0 0 4px rgba(229,72,77,.8))}
+:root[data-ui="light"] .pr-art .body{fill:#d4d8de}
+:root[data-ui="light"] .pr-art .m{fill:#bcc1c9}
 .av.lg{width:64px;height:64px;font-size:26px}
 .av img,.pc-av img{width:100%;height:100%;object-fit:cover;display:block}
 .pcard{border-radius:22px;padding:22px 16px 18px;text-align:center;color:#fff;background:radial-gradient(120% 90% at 50% 0%,#F0686C 0%,#E5484D 38%,#8E1F27 100%);box-shadow:0 18px 40px -18px rgba(229,72,77,.7)}
@@ -1081,8 +1089,19 @@ function addPastWorkout(t, name, tid) {
   S.workouts.push(w); Store.pushWorkout(w); closeModal(); const y = appY(); render(); appScroll(y);
   toast('Séance ajoutée au ' + fmtDate(t, { day: 'numeric', month: 'long' }));
 }
+function presetArt(p) {
+  const n = p.name.toLowerCase(), on = n.includes('biceps') ? ['bi', 'abs'] : n.includes('pec') ? ['pec', 'tri'] : ['del', 'trap'];
+  const c = id => on.includes(id) ? 'm hot' : 'm';
+  const abs = [64, 76, 88].map(y => `<rect class="${c('abs')}" x="47" y="${y}" width="11" height="9" rx="3"/><rect class="${c('abs')}" x="62" y="${y}" width="11" height="9" rx="3"/>`).join('');
+  return `<svg class="pr-art" viewBox="0 0 120 120" aria-hidden="true"><path class="body" d="M60 6c7 0 11 4 11 10v5c13 3 27 8 35 19 6 9 7 27 4 47h-9c0-12-2-22-6-28l-1 36c-3 6-9 9-16 9H42c-7 0-13-3-16-9l-1-36c-4 6-6 16-6 28H10c-3-20-2-38 4-47 8-11 22-16 35-19v-5c0-6 4-10 11-10z"/>
+  <path class="${c('trap')}" d="M46 22c4 8 9 12 14 12s10-4 14-12c-5 3-9 4-14 4s-9-1-14-4z"/>
+  <ellipse class="${c('del')}" cx="22" cy="40" rx="11" ry="13"/><ellipse class="${c('del')}" cx="98" cy="40" rx="11" ry="13"/>
+  <path class="${c('pec')}" d="M60 36c-6-2-16-1-24 4-2 7-1 14 3 18 8 3 17 1 21-4z"/><path class="${c('pec')}" d="M60 36c6-2 16-1 24 4 2 7 1 14-3 18-8 3-17 1-21-4z"/>
+  <ellipse class="${c('bi')}" cx="21" cy="64" rx="6" ry="13"/><ellipse class="${c('bi')}" cx="99" cy="64" rx="6" ry="13"/>
+  <ellipse class="${c('tri')}" cx="12" cy="66" rx="4.5" ry="13"/><ellipse class="${c('tri')}" cx="108" cy="66" rx="4.5" ry="13"/>${abs}</svg>`;
+}
 function presetsBlock() {
-  return `<section class="stack"><div class="section-head"><h2>Séances prêtes</h2><span class="xs muted">Modifiables ensuite</span></div><div class="list">${PRESETS.map(p => `<div class="item"><div class="grow"><div style="font-weight:650;overflow-wrap:anywhere">${esc(p.name)}</div><div class="xs muted">${plural(p.items.length, 'exercice')} · ${plural(p.items.reduce((a, i) => a + i.sets, 0), 'série')}</div></div><button class="btn sm primary" data-a="preset-add" data-k="${p.key}">${I.plus} Ajouter</button></div>`).join('')}</div></section>`;
+  return `<section class="stack"><div class="section-head"><h2>Séances prêtes</h2><span class="xs muted">Modifiables ensuite</span></div><div class="list">${PRESETS.map(p => `<div class="item pr-row">${presetArt(p)}<div class="grow"><div style="font-weight:650;overflow-wrap:anywhere">${esc(p.name)}</div><div class="xs muted">${plural(p.items.length, 'exercice')} · ${plural(p.items.reduce((a, i) => a + i.sets, 0), 'série')}</div></div><button class="btn sm primary" data-a="preset-add" data-k="${p.key}">${I.plus} Ajouter</button></div>`).join('')}</div></section>`;
 }
 function homeProgress(ws) {
   const w0 = startOfWeek(Date.now());
