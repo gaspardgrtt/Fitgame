@@ -496,6 +496,31 @@ button.cal-d{-webkit-appearance:none;appearance:none;padding:0;font-family:inher
 .ic-circ .ico{color:#fff}
 button.card[data-a="open-photos"],button.card[data-a="open-friends"]{gap:12px}
 :root:not([data-ui="light"]) .stats3 > div{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018)),#101012;border-color:rgba(255,255,255,.085)}
+.fr-hero{border-radius:24px;padding:18px 16px;display:flex;flex-direction:column;gap:14px;color:#fff;background:radial-gradient(120% 100% at 0% 0%,#FF6468 0%,#DB3A40 45%,#8E1F27 100%);border:1px solid rgba(255,150,150,.5);box-shadow:0 20px 40px -22px rgba(229,72,77,.9),inset 0 1px 0 rgba(255,255,255,.35)}
+.fr-hero .av{background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.8)}
+.fr-hero .btn{background:rgba(0,0,0,.28);border-color:rgba(255,255,255,.25);color:#fff}
+.fr-nm{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.05;overflow-wrap:anywhere}
+.fr-sub{font-size:13px;opacity:.92}
+.fr-chips{display:flex;flex-wrap:wrap;gap:6px}
+.fr-chips span{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.25);font-size:12.5px}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end;margin-top:4px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;min-width:0}
+.pod .nm{font-weight:700;font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pod .av{width:48px;height:48px}
+.pod.p1 .av{width:60px;height:60px;box-shadow:0 0 0 3px var(--accent)}
+.pod .bar{width:100%;border-radius:14px 14px 6px 6px;display:flex;flex-direction:column;align-items:center;padding-top:8px;font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.1)}
+.pod .bar small{font-family:var(--font-body);font-size:10px;font-weight:600;opacity:.8;margin-top:4px}
+.pod.p1 .bar{height:96px;background:linear-gradient(180deg,#FF6468,#B8343A);border-color:rgba(255,150,150,.6);color:#fff}
+.pod.p2 .bar{height:72px}.pod.p3 .bar{height:56px}
+.crown{font-size:18px;line-height:1;margin-bottom:-4px}
+.fr-row{display:flex;align-items:center;gap:12px;cursor:pointer}
+.fr-row.me{background:rgba(229,72,77,.1)}
+.rk{width:20px;text-align:center;font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--muted)}
+.fr-n{font-weight:650;overflow-wrap:anywhere}
+.fr-v{font-family:var(--font-display);font-weight:700;font-size:26px}
+.mini{height:5px;border-radius:99px;background:rgba(128,128,128,.25);margin-top:6px;overflow:hidden}
+.mini i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF6468,#E5484D)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ADE80;margin-right:6px;box-shadow:0 0 8px #4ADE80}
 .av.lg{width:64px;height:64px;font-size:26px}
 .av img,.pc-av img{width:100%;height:100%;object-fit:cover;display:block}
 .pcard{border-radius:22px;padding:22px 16px 18px;text-align:center;color:#fff;background:radial-gradient(120% 90% at 50% 0%,#F0686C 0%,#E5484D 38%,#8E1F27 100%);box-shadow:0 18px 40px -18px rgba(229,72,77,.7)}
@@ -1190,9 +1215,9 @@ function profileCard(b) {
   const row = (l, v) => `<div class="pc-row"><span>${l}</span><b>${v}</b></div>`;
   const since = st.first_at ? new Date(st.first_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '–';
   return `<div class="pcard">${avatarEl(b, 'pc-av')}<div class="pc-name">${esc(nm)}</div><div class="pc-sub">@${esc(b.pseudo)} · ${ic} ${lv}</div>
-  <div class="pc-streak"><b class="num">${n(st.streak)}</b><span>${n(st.streak) > 1 ? 'semaines' : 'semaine'} de série 🔥<br>record : ${n(st.best_streak)}</span></div>
+  <div class="pc-streak"><b class="num">${n(st.streak)}</b><span>${n(st.streak) > 1 ? 'semaines' : 'semaine'} de série 🔥</span></div>
   <div class="pc-grid">${cell(n(st.week_count) + '/' + (n(st.week_goal) || '–'), 'Cette semaine')}${cell(n(st.month_count), 'Ce mois-ci')}${cell(n(st.total), 'Séances')}${cell((n(st.volume_kg) / 1000).toFixed(1) + ' t', 'Soulevées')}</div>
-  ${row('Exercice favori', esc(st.fav_exercise || '–'))}${row('Record', st.best_lift_name ? esc(st.best_lift_name) + ' · ' + n(st.best_lift_kg) + ' kg' : '–')}${row('Dernière séance', st.last_at ? esc(relDay(new Date(st.last_at).getTime())) : '–')}${row('Depuis', esc(since))}</div>`;
+  ${row('Exercice favori', esc(st.fav_exercise || '–'))}${row('Dernière séance', st.last_at ? esc(relDay(new Date(st.last_at).getTime())) : '–')}${row('Depuis', esc(since))}</div>`;
 }
 function profileEditor() {
   const p = S.settings.profile || {}, au = myStats(true), me = SBboard.find(b => b.me) || { pseudo: SBd.pseudo, st: myStats() };
@@ -1200,8 +1225,6 @@ function profileEditor() {
   return `<h2>Mon profil</h2><button class="row" style="gap:12px;margin:12px 0 2px;width:100%;text-align:left" data-a="fr-avatar">${avatarEl(me, 'av lg')}<span class="grow"><b>Changer ma photo</b><div class="xs muted">Visible par tes amis</div></span></button>
   ${f('pc-name', 'Prénom', S.settings.name || '', 'Ton prénom', 'maxlength="20"')}
   ${f('pc-fav', 'Exercice favori', p.fav || '', au.fav_exercise ? 'Auto : ' + au.fav_exercise : 'Ex : Développé couché', 'maxlength="40"')}
-  ${f('pc-ln', 'Record : exercice', p.liftName || '', au.best_lift_name ? 'Auto : ' + au.best_lift_name : 'Ex : Squat', 'maxlength="40"')}
-  ${f('pc-lk', 'Record : charge (kg)', p.liftKg || '', au.best_lift_kg ? 'Auto : ' + au.best_lift_kg : 'Ex : 100', 'inputmode="decimal"')}
   <p class="xs muted" style="margin-top:8px">Laisse vide pour que l’appli calcule tout seule à partir de tes séances.</p>
   <div class="row" style="margin-top:12px"><button class="btn grow" data-a="close">Annuler</button><button class="btn primary grow" data-a="fr-save-profile">Enregistrer</button></div>`;
 }
@@ -1236,17 +1259,30 @@ function viewFriends() {
   const me = SBd.ses.uid, fr = SBs.friends, oth = f => f.requester === me ? f.ad : f.rq, othId = f => f.requester === me ? f.addressee : f.requester;
   const acc = fr.filter(f => f.status === 'accepted'), inc = fr.filter(f => f.status === 'pending' && f.addressee === me), out = fr.filter(f => f.status === 'pending' && f.requester === me);
   const board = [{ pseudo: SBd.pseudo, me: true, st: myStats() }].concat(acc.map(f => ({ f, pseudo: (oth(f) || {}).pseudo || '?', st: (x => x ? Object.assign({}, x, (p => { const o = {}; if (p && p.avatar) o.avatar = p.avatar; if (p && p.display_name) o.display_name = p.display_name; return o; })(SBs.prof[othId(f)])) : null)(SBs.stats.find(x => x.user_id === othId(f))) })));
-  board.sort((a, b) => ((b.st ? b.st.week_count : 0) - (a.st ? a.st.week_count : 0)) || ((b.st ? b.st.streak : 0) - (a.st ? a.st.streak : 0)));
+  const mode = ui.frRank || 'week', num = v => Number(v) || 0, S_ = b => b.st || {};
+  const val = b => num(mode === 'week' ? S_(b).week_count : mode === 'month' ? S_(b).month_count : S_(b).total);
+  board.sort((a, b) => val(b) - val(a) || num(S_(b).streak) - num(S_(a).streak));
   SBboard = board;
+  const t0 = startOfDay(Date.now()), when = b => S_(b).last_at ? new Date(S_(b).last_at).getTime() : 0, nameOf = b => S_(b).display_name || b.pseudo;
+  const meB = board.find(b => b.me), ms = S_(meB), lv = lvl(num(ms.total));
   let h = '';
   if (ui.invite && ui.invite !== SBd.pseudo && !fr.some(f => (oth(f) || {}).pseudo === ui.invite)) h += card(`<h3>Invitation</h3><p class="small">Ajouter <b>@${esc(ui.invite)}</b> en ami ?</p><button class="btn primary block" data-a="fr-add" data-p="${esc(ui.invite)}">Envoyer la demande</button>`);
-  const meB = board.find(b => b.me);
-  h += `<button class="card tight row between" style="text-align:left;width:100%;gap:12px" data-a="fr-edit">${avatarEl(meB, 'av lg')}<div class="grow" style="min-width:0"><h3 style="overflow-wrap:anywhere">${esc((meB.st && meB.st.display_name) || meB.pseudo)}</h3><div class="xs muted">Modifier ma photo et mon profil</div></div></button>`;
-  h += `<section class="stack"><div class="section-head"><h2>Cette semaine</h2><span class="xs muted">@${esc(SBd.pseudo)}</span></div><div class="list">${board.map((b, i) => `<div class="item" data-a="fr-card" data-i="${i}" style="cursor:pointer">${avatarEl(b)}<div class="grow" style="min-width:0"><div style="font-weight:650;overflow-wrap:anywhere">#${i + 1} @${esc(b.pseudo)}${b.me ? ' (toi)' : ''}</div><div class="xs muted">${b.st ? `${plural(b.st.total, 'séance')} · série ${b.st.streak} sem.${b.st.last_name && b.st.last_at ? ' · ' + esc(b.st.last_name) + ', ' + esc(relDay(new Date(b.st.last_at).getTime()).toLowerCase()) : ''}` : 'Pas encore de stats'}</div></div><div class="num" style="font-weight:700;font-size:20px">${b.st ? b.st.week_count : 0}<span class="xs muted">/${b.st ? b.st.week_goal : '–'}</span></div>${b.f ? `<button class="icon-btn sm" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?" aria-label="Retirer cet ami">${I.trash}</button>` : ''}</div>`).join('')}</div>${acc.length ? '' : '<p class="muted small">Ajoute un ami pour te comparer.</p>'}</section>`;
-  if (inc.length) h += `<section class="stack"><div class="section-head"><h2>Demandes reçues</h2></div><div class="list">${inc.map(f => `<div class="item"><div class="grow" style="font-weight:650">@${esc((f.rq || {}).pseudo || '?')}</div><button class="btn sm primary" data-a="fr-ok" data-id="${f.id}">Accepter</button><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Refuser cette demande ?">Refuser</button></div>`).join('')}</div></section>`;
-  h += card(`<h3>Ajouter un ami</h3><div class="row"><input class="input grow" id="sb-friend" placeholder="Son pseudo" autocapitalize="off" autocomplete="off" maxlength="21"><button class="btn primary" data-a="fr-add">Envoyer</button></div><button class="btn block" data-a="fr-share">Inviter par lien</button>`);
-  if (out.length) h += `<section class="stack"><div class="section-head"><h2>Demandes envoyées</h2></div><div class="list">${out.map(f => `<div class="item"><div class="grow">@${esc((f.ad || {}).pseudo || '?')} <span class="xs muted">· en attente</span></div><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Annuler la demande ?">Annuler</button></div>`).join('')}</div></section>`;
-  if (SBs.err) h += `<p class="small" style="color:var(--bad,#c0392b)">${esc(SBs.err)}</p>`;
+  h += `<section class="fr-hero"><div class="row" style="gap:14px;align-items:center">${avatarEl(meB, 'av lg')}<div class="grow" style="min-width:0"><div class="fr-nm">${esc(nameOf(meB))}</div><div class="fr-sub">@${esc(SBd.pseudo)} · ${lv[1]} ${lv[0]}</div></div></div>
+  <div class="fr-chips"><span>🔥 <b>${num(ms.streak)}</b> sem. de série</span><span>💪 <b>${num(ms.week_count)}/${num(ms.week_goal) || '–'}</b> cette semaine</span><span>🏋️ <b>${num(ms.total)}</b> séances</span></div>
+  <div class="row" style="gap:8px"><button class="btn grow" data-a="fr-edit">Mon profil</button><button class="btn grow" data-a="fr-share">Inviter un ami</button></div></section>`;
+  if (inc.length) h += `<section class="stack"><div class="section-head"><h2>Demandes reçues</h2><span class="pill pr">${inc.length}</span></div><div class="list">${inc.map(f => { const p = (f.rq || {}).pseudo || '?'; return `<div class="item"><span class="av">${esc(p.charAt(0).toUpperCase())}</span><div class="grow" style="font-weight:650;min-width:0;overflow-wrap:anywhere">@${esc(p)}</div><button class="btn sm primary" data-a="fr-ok" data-id="${f.id}">Accepter</button><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Refuser cette demande ?">Refuser</button></div>`; }).join('')}</div></section>`;
+  if (acc.length) {
+    const unit = mode === 'week' ? 'cette sem.' : mode === 'month' ? 'ce mois' : 'au total';
+    const pod = (b, i, c) => b ? `<div class="pod ${c}" data-a="fr-card" data-i="${i}">${c === 'p1' ? '<span class="crown">👑</span>' : ''}${avatarEl(b)}<div class="nm">${esc(nameOf(b))}</div><div class="bar">${val(b)}<small>${unit}</small></div></div>` : '<div></div>';
+    h += `<section class="stack"><div class="section-head"><h2>Classement</h2></div><div class="seg" role="group" aria-label="Période">${[['week', 'Semaine'], ['month', 'Mois'], ['total', 'Total']].map(([k, l]) => `<button class="${mode === k ? 'on' : ''}" data-a="fr-rank" data-k="${k}">${l}</button>`).join('')}</div>
+    <div class="podium">${pod(board[1], 1, 'p2')}${pod(board[0], 0, 'p1')}${pod(board[2], 2, 'p3')}</div>
+    <div class="list">${board.map((b, i) => { const st = S_(b), w = when(b), today = w && startOfDay(w) === t0, goal = num(st.week_goal) || 3;
+      return `<div class="item fr-row${b.me ? ' me' : ''}" data-a="fr-card" data-i="${i}"><span class="rk">${i + 1}</span>${avatarEl(b)}<div class="grow" style="min-width:0"><div class="fr-n">${esc(nameOf(b))}${b.me ? ' <span class="xs muted">(toi)</span>' : ''}</div><div class="xs muted">${today ? '<span class="dot"></span>Entraîné aujourd’hui' : w ? esc(st.last_name || 'Séance') + ' · ' + esc(relDay(w).toLowerCase()) : 'Pas encore de séance'}${num(st.streak) ? ' · 🔥 ' + num(st.streak) + ' sem.' : ''}</div>${mode === 'week' ? `<div class="mini"><i style="width:${Math.min(100, num(st.week_count) / goal * 100)}%"></i></div>` : ''}</div><div class="num fr-v">${val(b)}</div></div>`; }).join('')}</div></section>`;
+    const act = board.filter(b => !b.me && when(b)).sort((a, b) => when(b) - when(a)).slice(0, 5);
+    if (act.length) h += `<section class="stack"><div class="section-head"><h2>Activité récente</h2></div><div class="list">${act.map(b => `<div class="item" data-a="fr-card" data-i="${board.indexOf(b)}" style="cursor:pointer">${avatarEl(b)}<div class="grow" style="min-width:0"><div style="font-weight:650;overflow-wrap:anywhere">${esc(nameOf(b))}</div><div class="xs muted">${esc(S_(b).last_name || 'Séance')} · ${esc(relDay(when(b)).toLowerCase())}</div></div><span class="xs muted">${num(S_(b).week_count)} cette sem.</span></div>`).join('')}</div></section>`;
+  } else h += `<section class="card stack" style="text-align:center"><h3>Entraîne-toi avec tes potes</h3><p class="muted small">Ajoute un ami avec son pseudo ou envoie-lui ton lien : vous verrez qui s’entraîne, la série de chacun et un classement de la semaine.</p><button class="btn primary block" data-a="fr-share">Inviter par lien</button></section>`;
+  h += card(`<h3>Ajouter un ami</h3><div class="row"><input class="input grow" id="sb-friend" placeholder="Son pseudo" autocapitalize="off" autocomplete="off" maxlength="21"><button class="btn primary" data-a="fr-add">Ajouter</button></div>${out.length ? `<div class="xs muted">En attente : ${out.map(f => `<button class="chip" data-a="fr-del" data-id="${f.id}" data-t="Annuler la demande ?">@${esc((f.ad || {}).pseudo || '?')} ✕</button>`).join(' ')}</div>` : ''}`);
+  if (SBs.err) h += `<p class="small" style="color:var(--down)">${esc(SBs.err)}</p>`;
   h += `<button class="btn ghost block" data-a="fr-logout">Se déconnecter</button>`;
   return wrap(h);
 }
@@ -1943,14 +1979,15 @@ const A = {
   'fr-save-cfg': () => { const u = $('#sb-url').value.trim(), k = $('#sb-key').value.trim(); if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(u) || k.length < 20) return toast('URL (https://xxxx.supabase.co) ou clé invalide'); SBd.url = u; SBd.key = k; sbSave(); render(); },
   'fr-card': d => {
     const b = SBboard[+d.i]; if (!b) return;
-    modal(profileCard(b) + (b.me ? '<button class="btn block" style="margin-top:12px" data-a="fr-edit">Modifier mon profil</button>' : '') + '<button class="btn ghost block" style="margin-top:8px" data-a="close">Fermer</button>');
+    modal(profileCard(b) + (b.me ? '<button class="btn block" style="margin-top:12px" data-a="fr-edit">Modifier mon profil</button>' : '') + (b.f ? `<button class="btn danger block" style="margin-top:12px" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?">Retirer des amis</button>` : '') + '<button class="btn ghost block" style="margin-top:8px" data-a="close">Fermer</button>');
   },
   'fr-avatar': () => $('#avatar-file').click(),
+  'fr-rank': d => { ui.frRank = d.k; rerender(); },
   'fr-edit': () => modal(profileEditor()),
   'fr-save-profile': async () => {
-    const g = id => $('#' + id).value.trim(), kg = parseFloat(g('pc-lk').replace(',', '.'));
+    const g = id => $('#' + id).value.trim();
     S.settings.name = g('pc-name').slice(0, 20);
-    S.settings.profile = { fav: g('pc-fav').slice(0, 40), liftName: g('pc-ln').slice(0, 40), liftKg: kg > 0 ? Math.min(kg, 999) : 0 };
+    S.settings.profile = { fav: g('pc-fav').slice(0, 40) };
     Store.touchLib(); closeModal(); rerender(); toast('Profil enregistré'); await sbSync(); if (SBd.ses && SBd.pseudo) { try { await sbLoad(); } catch (e) {} } rerender();
   },
   'fr-reset': () => { SBd.url = ''; SBd.key = ''; SBd.ses = null; SBd.pseudo = null; sbSave(); render(); },
