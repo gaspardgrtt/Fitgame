@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fonte">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
@@ -553,6 +553,9 @@ button.card[data-a="open-photos"],button.card[data-a="open-friends"]{gap:12px}
 .cmp img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;margin-top:8px;display:block}
 
 /* ───── Ajustements mobile ───── */
+:root{padding:0!important}
+html,body{width:100%;min-height:100dvh;background-color:#070708}
+:root[data-ui="light"],:root[data-ui="light"] body{background-color:var(--bg)}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .topbar,.wk-head{top:0;margin-top:calc(-1 * max(12px,env(safe-area-inset-top,0px)));padding-top:calc(max(12px,env(safe-area-inset-top,0px)) + 6px)}
 .sheet{max-height:min(88%,calc(100dvh - 24px));overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
