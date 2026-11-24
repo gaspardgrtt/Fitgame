@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name= "viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icon-192.png">
-<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" href="/icon-192.png?v=2">
+<link rel="apple-touch-icon" href="/icon-180.png?v=2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -242,6 +242,10 @@ button.wd-d:active{transform:scale(.92)}
 /* ───── Séances ───── */
 .tpl{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
 .tpl-head{display:flex;align-items:center;gap:10px}
+.reco{display:flex;align-items:center;gap:12px;padding:12px 14px;border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.reco .tpl-art{width:48px;height:62px}
+.reco-n{font-size:17px;font-weight:800;letter-spacing:-.01em;margin:1px 0 2px;overflow-wrap:anywhere}
+.reco .btn.sm{width:44px;height:44px;padding:0;border-radius:50%}
 .tpl-art{width:58px;height:76px;flex:none;border-radius:14px;background:var(--surface-2);padding:3px}
 .tpl-art .bb{fill:var(--surface-3)}
 .tpl-art .bm{fill:color-mix(in srgb,var(--surface-3) 60%,var(--fg) 12%)}
@@ -512,7 +516,7 @@ details.more .chev{transition:transform .2s var(--ease)}
 :root{--grad:linear-gradient(180deg,#EE4A53 0%,#D52D3B 100%);--glow:0 8px 22px -10px rgba(213,45,59,.75)}
 :root[data-ui="dark"]{--nav-solid:#111114;--bg:#0B0B0D;--surface:#141417;--surface-2:#1C1C20;--surface-3:#28282D;--line:rgba(255,255,255,.07);--grad:linear-gradient(180deg,#FF5A61 0%,#E5484D 55%,#C83238 100%);--glow:0 10px 26px -10px rgba(229,72,77,.8);--bar-bg:rgba(11,11,13,.86)}
 :root[data-ui="dark"] body{background:transparent}
-:root[data-ui="dark"] body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(90% 45% at 0% 0%,rgba(var(--g1),.18),transparent 65%),radial-gradient(80% 40% at 100% 100%,rgba(var(--g2),.12),transparent 65%)}
+:root[data-ui="dark"] body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,var(--bg) 0,var(--bg) env(safe-area-inset-top,0px),transparent calc(env(safe-area-inset-top,0px) + 140px)),radial-gradient(120% 55% at -10% 35%,rgba(var(--g1),.13),transparent 70%),radial-gradient(90% 45% at 110% 100%,rgba(var(--g2),.10),transparent 70%)}
 :root[data-ui="dark"] :is(.card,.list,.tpl,.stats3 > div,.stats4 > div,.kv > div,.ed-item,.last-perf,.trend){background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)),var(--surface)}
 .btn.primary{background:var(--grad);border-color:transparent;box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.22)}
 .btn.primary:active{background:var(--accent-press);box-shadow:none}
@@ -627,7 +631,7 @@ h1,h2,h3,.ex-name{letter-spacing:-.02em}
 .pal.on{border-color:var(--accent);color:var(--fg);box-shadow:0 0 0 2px var(--accent-soft)}
 .pal-dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px}
 :root[data-ui="light"]:not([data-pal="rouge"]) body{background:transparent}
-:root[data-ui="light"]:not([data-pal="rouge"]) body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(90% 40% at 0% 0%,rgba(var(--g1),.10),transparent 65%),radial-gradient(80% 40% at 100% 100%,rgba(var(--g2),.08),transparent 65%)}
+:root[data-ui="light"]:not([data-pal="rouge"]) body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,var(--bg) 0,var(--bg) env(safe-area-inset-top,0px),transparent calc(env(safe-area-inset-top,0px) + 140px)),radial-gradient(120% 50% at -10% 35%,rgba(var(--g1),.08),transparent 70%),radial-gradient(80% 40% at 100% 100%,rgba(var(--g2),.08),transparent 65%)}
 
 /* ───── Séance à plusieurs ───── */
 .grp-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:8px calc(-1 * var(--side-r)) 0 calc(-1 * var(--side));padding:2px var(--side-r) 2px var(--side)}
@@ -640,20 +644,25 @@ h1,h2,h3,.ex-name{letter-spacing:-.02em}
 .grp-s{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .grp-chip .mini{margin-top:4px}
 .grp-inv{display:flex;flex-direction:column;gap:12px}
+.cheer-row{display:flex;gap:10px;justify-content:center;margin-top:14px}
+.cheer-b{width:64px;height:54px;border-radius:16px;font-size:28px;background:var(--surface);border:1px solid var(--line);transition:transform .12s}
+.cheer-b:active{transform:scale(.9)}
+.cheer-e{font-size:20px;letter-spacing:2px;white-space:nowrap}
 
 /* ───── App installée sur l'écran d'accueil (PWA) ───── */
 .sb-shield{display:none}
 .pwa .sb-shield{display:block;position:fixed;top:0;left:0;right:0;z-index:15;pointer-events:none;height:calc(env(safe-area-inset-top,0px) + 10px);background:linear-gradient(var(--bg) 0,var(--bg) calc(100% - 10px),transparent)}
+:root:not(.pwa) #app{padding-top:max(20px,env(safe-area-inset-top,0px));padding-bottom:calc(var(--nav-h) + 40px)}
 .pwa #app{padding-top:calc(env(safe-area-inset-top,0px) + 22px);padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 36px)}
 .pwa .topbar,.pwa .wk-head{margin-top:calc(-1 * (env(safe-area-inset-top,0px) + 22px));padding-top:calc(env(safe-area-inset-top,0px) + 8px);background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none;z-index:16}
-.pwa .nav{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:max(10px,calc(env(safe-area-inset-bottom,0px) - 8px));max-width:520px;margin:0 auto;padding:0;border-radius:30px;
+.nav{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:max(10px,calc(env(safe-area-inset-bottom,0px) - 8px));max-width:520px;margin:0 auto;padding:0;border-radius:30px;
   background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38));border:1px solid rgba(255,255,255,.7);
   -webkit-backdrop-filter:blur(24px) saturate(190%);backdrop-filter:blur(24px) saturate(190%);
   box-shadow:0 12px 34px -12px rgba(23,25,30,.35),inset 0 1px 0 rgba(255,255,255,.9)}
-:root[data-ui="dark"].pwa .nav{background:linear-gradient(180deg,rgba(40,40,46,.62),rgba(20,20,24,.5));border-color:rgba(255,255,255,.12);box-shadow:0 14px 36px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.14)}
-.pwa .nav > div{height:62px;padding:6px 4px}
-.pwa .toast{bottom:calc(var(--nav-h) + max(10px,calc(env(safe-area-inset-bottom,0px) - 8px)) + 14px)}
-.pwa .rest-bar,.pwa .bottom-bar{bottom:max(12px,calc(env(safe-area-inset-bottom,0px) - 6px))}
+:root[data-ui="dark"] .nav{background:linear-gradient(180deg,rgba(40,40,46,.62),rgba(20,20,24,.5));border-color:rgba(255,255,255,.12);box-shadow:0 14px 36px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.14)}
+.nav > div{height:62px;padding:6px 4px}
+.toast{bottom:calc(var(--nav-h) + max(10px,calc(env(safe-area-inset-bottom,0px) - 8px)) + 14px)}
+.rest-bar,.bottom-bar{bottom:max(12px,calc(env(safe-area-inset-bottom,0px) - 6px))}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (max-width:370px){
@@ -1150,7 +1159,13 @@ function viewHome() {
     <div class="row between wrap" style="gap:6px"><span class="xs muted">${k.cur >= k.g ? 'Objectif atteint cette semaine' : `Encore ${plural(k.g - k.cur, 'séance')} pour l'objectif`}</span>${k.streak ? `<span class="streak">${I.flame}<span class="num">${k.streak}</span> ${k.streak > 1 ? 'semaines d’affilée' : 'semaine validée'}</span>` : '<span class="xs muted">Pas de série en cours</span>'}</div>
   </section>`;
 
+  { const fresh = (SBs.cheers || []).filter(c => Date.now() - new Date(c.created_at).getTime() < DAY); if (fresh.length && !S.active) h += `<button class="banner" data-a="open-friends"><span class="cheer-e">${fresh.slice(0, 3).map(c => c.emoji).join('')}</span><div class="grow"><div style="font-weight:700">${esc(grpName(fresh[0].from_user))}${fresh.length > 1 ? ` et ${plural(fresh.length - 1, 'autre')}` : ''} t’encourage</div><div class="xs muted">Ouvre la page Amis pour répondre</div></div></button>`; }
   { const inv = GR.mine.filter(r => r.status === 'invited'); if (inv.length && !S.active) h += `<button class="banner" data-a="open-friends"><span class="pulse"></span><div class="grow"><div style="font-weight:700">${esc(grpName(inv[0].group_sessions.host))} t’invite à une séance</div><div class="xs muted">${esc(inv[0].group_sessions.name)} · à plusieurs</div></div><span class="btn sm primary">Voir</span></button>`; }
+  if (!S.active) { const rc = recommendSession(); if (rc) {
+    const why = [rc.r >= 1 ? 'muscles récupérés' : `muscles récupérés à ${Math.round(rc.r * 100)} %`, rc.last ? (rc.days < 1 ? "faite aujourd'hui" : `pas faite depuis ${Math.floor(rc.days)} j`) : 'jamais faite'];
+    if (rc.ready) why.push(`${plural(rc.ready, 'exercice prêt', 'exercices prêts')} à monter`);
+    h += `<section class="card reco"><div class="reco-l">${bodyArt(rc.ms.length ? new Set(rc.ms) : tplMuscles(rc.t))}</div><div class="grow" style="min-width:0"><div class="eyebrow" style="color:var(--accent)">Conseillée aujourd’hui</div><div class="reco-n">${esc(rc.t.name)}</div><div class="xs muted">${why.join(' · ')}</div></div><button class="btn sm primary" data-a="start" data-id="${rc.t.id}" aria-label="Commencer ${esc(rc.t.name)}">${I.play}</button></section>`;
+  } }
   h += S.active ? `<button class="btn primary lg block" data-a="resume">${I.play} Reprendre la séance</button>` : `<button class="btn primary lg block" data-a="start-pick">${I.play} Commencer une séance</button>`;
 
   // Rings: last 7 days compared with the 7 days before (never empty on a Monday)
@@ -1262,7 +1277,7 @@ const SBd = (() => { try { return JSON.parse(localStorage.getItem(SBK)) || {}; }
 const SB_URL = 'https://byjgpkoyvpircjjzysmo.supabase.co', SB_KEY = 'sb_publishable_vRuIiBWxjJWRHj4JTCxsGw_Rmqj6Pn9';
 if (SB_URL && SB_KEY) { SBd.url = SB_URL; SBd.key = SB_KEY; }
 const sbSave = () => { try { localStorage.setItem(SBK, JSON.stringify(SBd)); } catch (e) {} };
-const SBs = { friends: [], stats: [], prof: {}, loading: false, err: '' };
+const SBs = { friends: [], stats: [], prof: {}, loading: false, err: '', cheers: [] };
 const rerender = () => { const y = appY(); render(); appScroll(y); };
 let SBboard = [];
 const sbOn = () => !!(SBd.url && SBd.key);
@@ -1322,6 +1337,7 @@ async function sbLoad() {
   const ids = Array.from(new Set(SBs.friends.map(f => f.requester === SBd.ses.uid ? f.addressee : f.requester))); SBs.prof = {};
   if (ids.length) try { (await sbReq('/rest/v1/profiles?id=in.(' + ids.join(',') + ')&select=id,avatar,display_name') || []).forEach(p => { SBs.prof[p.id] = p; }); } catch (e) {}
   await grpLoad();
+  try { SBs.cheers = await sbReq('/rest/v1/cheers?to_user=eq.' + SBd.ses.uid + '&created_at=gte.' + new Date(Date.now() - 3 * DAY).toISOString() + '&select=id,from_user,emoji,created_at&order=created_at.desc&limit=30') || []; } catch (e) { SBs.cheers = []; }
 }
 /* ───────────── Séance à plusieurs (tables group_sessions / group_members) ───────────── */
 const GR = { mine: [], missing: false, live: [], timer: null, pushT: null, names: false };
@@ -1484,6 +1500,8 @@ function viewFriends() {
   h += `<section class="card fr-hero"><div class="row" style="gap:12px">${avatarEl(meB, 'av lg')}<div class="grow" style="min-width:0"><div class="fr-nm">${esc(nameOf(meB))}</div><div class="fr-sub">@${esc(SBd.pseudo)} · ${lv[1]} ${lv[0]}</div></div></div>
   <div class="fr-stats"><div><b class="num">${num(ms.week_count)}/${num(ms.week_goal) || '–'}</b><span>Cette semaine</span></div><div><b class="num">${num(ms.streak)}</b><span>Sem. de série</span></div><div><b class="num">${num(ms.total)}</b><span>Séances</span></div></div>
   <div class="row"><button class="btn sm grow" data-a="fr-edit">${I.edit} Mon profil</button><button class="btn sm tint grow" data-a="fr-share">${I.plus} Inviter un ami</button></div></section>`;
+  if (SBs.cheers.length) { const by = new Map(); SBs.cheers.forEach(c => { const k = c.from_user; if (!by.has(k)) by.set(k, { id: k, emojis: [], t: c.created_at }); by.get(k).emojis.push(c.emoji); });
+    h += `<section class="stack"><div class="section-head"><h2>Encouragements reçus</h2><span class="pill pr">${SBs.cheers.length}</span></div><div class="list">${Array.from(by.values()).map(c => `<div class="item">${grpAvatar(c.id, grpName(c.id))}<div class="grow" style="min-width:0"><div style="font-weight:650">${esc(grpName(c.id))}</div><div class="xs muted">${esc(relDay(new Date(c.t).getTime()).toLowerCase())}</div></div><span class="cheer-e">${c.emojis.slice(0, 5).join('')}</span></div>`).join('')}</div></section>`; }
   h += grpSection();
   if (inc.length) h += `<section class="stack"><div class="section-head"><h2>Demandes reçues</h2><span class="pill pr">${inc.length}</span></div><div class="list">${inc.map(f => { const p = (f.rq || {}).pseudo || '?'; return `<div class="item"><span class="av">${esc(p.charAt(0).toUpperCase())}</span><div class="grow" style="font-weight:650;min-width:0;overflow-wrap:anywhere">@${esc(p)}</div><button class="btn sm primary" data-a="fr-ok" data-id="${f.id}">Accepter</button><button class="btn sm" data-a="fr-del" data-id="${f.id}" data-t="Refuser cette demande ?">Refuser</button></div>`; }).join('')}</div></section>`;
   if (acc.length) {
@@ -1535,7 +1553,7 @@ function viewTemplates() {
   if (!ts.length) h += `<div class="empty"><h3>Aucune séance créée</h3><p class="muted small">Une séance est un modèle réutilisable : une liste d'exercices avec séries, répétitions visées et temps de repos. Exemples : Pectoraux / Triceps, Dos / Biceps, Jambes.</p></div>`;
   else h += `<section class="stack"><div class="section-head"><h2>Mes séances enregistrées</h2><span class="xs muted">${ts.length}</span></div>` + ts.map(t => {
     const sets = t.items.reduce((a, i) => a + (i.sets || 0), 0);
-    const lastW = sortedWorkouts().find(w => w.templateId === t.id);
+    const lastW = sortedWorkouts().find(w => w.templateId === t.id || slug(w.name) === slug(t.name));
     const isOpen = open.has(t.id);
     return `<article class="tpl ${isOpen ? 'open' : ''}"><div class="tpl-head">${bodyArt(tplMuscles(t))}<button class="tpl-tog" data-a="tpl-toggle" data-id="${t.id}" aria-expanded="${isOpen}"><div class="grow"><div class="tpl-name">${esc(t.name)}</div><div class="tpl-meta">${plural(t.items.length, 'exercice')} · ${plural(sets, 'série')} · ${lastW ? 'Faite ' + relDay(lastW.endedAt).toLowerCase() : 'Jamais faite'}</div></div><span class="chev">${I.down}</span></button>
       <button class="icon-btn sm" data-a="tpl-menu" data-id="${t.id}" aria-label="Options de ${esc(t.name)}">${I.dots}</button></div>
@@ -1756,7 +1774,7 @@ function finishSession(journal) {
   render(); appScroll(0);
 }
 function comparable(w) {
-  return sortedWorkouts().find(o => o.id !== w.id && o.endedAt < w.endedAt && o.exercises.length && (w.templateId ? o.templateId === w.templateId : o.name === w.name));
+  return sortedWorkouts().find(o => o.id !== w.id && o.endedAt < w.endedAt && o.exercises.length && ((w.templateId && o.templateId === w.templateId) || slug(o.name) === slug(w.name)));
 }
 function delta(a, b, fmt, unitless) {
   if (b == null) return '';
@@ -1979,6 +1997,20 @@ function coachData() {
     return { k, l, pct, left: Math.max(0, need - hours), sets, t };
   });
   return { ups, trends, rec };
+}
+function recommendSession() {
+  const ts = S.templates.filter(t => t.items.length); if (!ts.length || !S.workouts.length) return null;
+  const { ups, rec } = coachData(), recBy = Object.fromEntries(rec.map(r => [r.k, r.none ? 1 : r.pct]));
+  const now = Date.now();
+  const scored = ts.map(t => {
+    const ms = Array.from(tplMuscles(t)), r = ms.length ? ms.reduce((a, k) => a + (recBy[k] ?? 1), 0) / ms.length : 1;
+    const last = sortedWorkouts().find(w => w.templateId === t.id || slug(w.name) === slug(t.name));
+    const days = last ? (now - last.endedAt) / DAY : 30;
+    const ready = ups.filter(u => t.items.some(i => i.exId === u.exId)).length;
+    const score = r * 60 + Math.min(days, 10) * 5 + ready * 4 - (days < 1 ? 40 : 0);
+    return { t, r, days, ready, last, score, ms };
+  }).sort((a, b) => b.score - a.score);
+  return scored[0];
 }
 function coachBlock() {
   if (!S.workouts.length) return '';
@@ -2307,6 +2339,11 @@ const A = {
     Store.touchActive(true); closeModal(); stack = [{ v: 'workout' }]; render(); appScroll(0); wakeLock();
     if (!S.active.exercises.length) openPicker('session');
   },
+  cheer: async d => {
+    const k = 'cheer:' + d.to + d.e, last = +(SBd[k] || 0); if (Date.now() - last < 3600e3) return toast('Déjà envoyé il y a moins d’une heure');
+    try { await sbReq('/rest/v1/cheers', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: { from_user: SBd.ses.uid, to_user: d.to, emoji: d.e } }); SBd[k] = Date.now(); sbSave(); closeModal(); toast(d.e + ' envoyé à ' + grpName(d.to)); }
+    catch (e) { toast(/PGRST205|schema cache/.test(e.message) ? 'Encouragements à activer dans Supabase' : e.message); }
+  },
   'grp-new': () => { ui.grpSel = []; grpSheet(); },
   'grp-tpl': d => { ui.grpTpl = d.id; grpSheet(); },
   'grp-fr': d => { const s = ui.grpSel || (ui.grpSel = []), i = s.indexOf(d.id); i >= 0 ? s.splice(i, 1) : s.push(d.id); grpSheet(); },
@@ -2331,7 +2368,7 @@ const A = {
   'fr-save-cfg': () => { const u = $('#sb-url').value.trim(), k = $('#sb-key').value.trim(); if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(u) || k.length < 20) return toast('URL (https://xxxx.supabase.co) ou clé invalide'); SBd.url = u; SBd.key = k; sbSave(); render(); },
   'fr-card': d => {
     const b = SBboard[+d.i]; if (!b) return;
-    modal(profileCard(b) + (b.me ? '<button class="btn block" style="margin-top:12px" data-a="fr-edit">Modifier mon profil</button>' : '') + (b.f ? `<button class="btn danger block" style="margin-top:12px" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?">Retirer des amis</button>` : '') + '<button class="btn ghost block" style="margin-top:8px" data-a="close">Fermer</button>');
+    modal(profileCard(b) + (b.me ? '<button class="btn block" style="margin-top:12px" data-a="fr-edit">Modifier mon profil</button>' : '') + (b.f ? `<div class="cheer-row">${['💪', '🔥', '👏'].map(e => `<button class="cheer-b" data-a="cheer" data-to="${b.f.requester === SBd.ses.uid ? b.f.addressee : b.f.requester}" data-e="${e}" aria-label="Envoyer ${e}">${e}</button>`).join('')}</div>` : '') + (b.f ? `<button class="btn danger block" style="margin-top:12px" data-a="fr-del" data-id="${b.f.id}" data-t="Retirer @${esc(b.pseudo)} ?">Retirer des amis</button>` : '') + '<button class="btn ghost block" style="margin-top:8px" data-a="close">Fermer</button>');
   },
   'fr-avatar': () => $('#avatar-file').click(),
   'fr-rank': d => { ui.frRank = d.k; rerender(); },
@@ -2599,6 +2636,16 @@ Store.connect().finally(() => {
       ['Biceps / Abdos', 'Pectoraux / Triceps', 'Épaules / Dos'].forEach((name, i) => S.templates.push({ id: uid(), name, notes: '', items: [], createdAt: Date.now() + i, updatedAt: Date.now(), order: i }));
     }
     S.presetsV = 4; Store.touchLib();
+  }
+  if ((S.presetsV || 0) < 5) {
+    // One-time cleanup: the same session saved twice → keep the most complete copy
+    const groups = new Map();
+    S.templates.forEach(t => { const k = slug(t.name || ''); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(t); });
+    const used = id => S.workouts.filter(w => w.templateId === id).length;
+    const drop = new Set();
+    groups.forEach(list => { if (list.length < 2) return; list.sort((a, b) => b.items.length - a.items.length || used(b.id) - used(a.id) || (b.updatedAt || 0) - (a.updatedAt || 0)); list.slice(1).forEach(t => drop.add(t.id)); });
+    if (drop.size) { S.templates = S.templates.filter(t => !drop.has(t.id)); setTimeout(() => toast(plural(drop.size, 'séance en double supprimée', 'séances en double supprimées')), 600); }
+    S.presetsV = 5; Store.touchLib();
   }
   render();
   sbSyncSoon(1000);
